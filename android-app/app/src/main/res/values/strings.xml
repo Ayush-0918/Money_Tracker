@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Money Tracker</string>
+    
+    <!-- Onboarding / Welcome -->
+    <string name="welcome_title">Track Smarter.\nLive Better.</string>
+    <string name="welcome_subtitle">Your premium financial companion for automatic tracking and deep AI insights.</string>
+    <string name="welcome_button_continue">Get Started</string>
+    <string name="language_selection_title">Choose Your\nLanguage</string>
+    <string name="language_selection_subtitle">Experience personalized finance in your preferred language.</string>
+    <string name="language_selection_button_continue">Continue</string>
+    
+    <!-- Registration -->
+    <string name="registration_title">Secure Your\nAccount</string>
+    <string name="registration_subtitle">Enter your details to sync your transactions across devices safely.</string>
+    <string name="registration_name_label">Full Name</string>
+    <string name="registration_phone_label">WhatsApp Number</string>
+    <string name="registration_button_continue">Continue</string>
+    
+    <!-- Dashboard -->
+    <string name="dashboard_tab_home">Home</string>
+    <string name="dashboard_tab_activity">Activity</string>
+    <string name="dashboard_tab_analytics">Analytics</string>
+    <string name="dashboard_tab_profile">Profile</string>
+    <string name="dashboard_total_balance">Total Balance</string>
+    <string name="dashboard_monthly_income">Income</string>
+    <string name="dashboard_monthly_expenses">Expenses</string>
+    <string name="dashboard_add_transaction">Add Transaction</string>
+    
+    <!-- Activity / Search -->
+    <string name="activity_title">Activity</string>
+    <string name="activity_search_placeholder">Search transactions...</string>
+    <string name="activity_search_clear">Clear</string>
+    <string name="activity_filter_all">All</string>
+    <string name="activity_filter_food">Food</string>
+    <string name="activity_filter_transport">Transport</string>
+    <string name="activity_filter_shopping">Shopping</string>
+    <string name="activity_no_transactions">No transactions found</string>
+    
+    <!-- General -->
+    <string name="error_unknown">An unknown error occurred</string>
+</resources>
