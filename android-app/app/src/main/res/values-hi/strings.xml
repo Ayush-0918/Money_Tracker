@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">मनी ट्रैकर (Money Tracker)</string>
+    
+    <!-- Onboarding / Welcome -->
+    <string name="welcome_title">होशियारी से ट्रैक करें।\nबेहतर जिएं।</string>
+    <string name="welcome_subtitle">स्वचालित ट्रैकिंग और गहरी AI अंतर्दृष्टि के लिए आपका प्रीमियम वित्तीय साथी।</string>
+    <string name="welcome_button_continue">शुरू करें</string>
+    <string name="language_selection_title">अपनी भाषा\nचुनें</string>
+    <string name="language_selection_subtitle">अपनी पसंदीदा भाषा में व्यक्तिगत वित्त का अनुभव लें।</string>
+    <string name="language_selection_button_continue">आगे बढ़ें</string>
+    
+    <!-- Registration -->
+    <string name="registration_title">अपना खाता\nसुरक्षित करें</string>
+    <string name="registration_subtitle">अपने लेन-देन को सुरक्षित रूप से सिंक करने के लिए अपना विवरण दर्ज करें।</string>
+    <string name="registration_name_label">पूरा नाम</string>
+    <string name="registration_phone_label">व्हाट्सएप नंबर</string>
+    <string name="registration_button_continue">आगे बढ़ें</string>
+    
+    <!-- Dashboard -->
+    <string name="dashboard_tab_home">होम</string>
+    <string name="dashboard_tab_activity">गतिविधि</string>
+    <string name="dashboard_tab_analytics">एनालिटिक्स</string>
+    <string name="dashboard_tab_profile">प्रोफ़ाइल</string>
+    <string name="dashboard_total_balance">कुल बैलेंस</string>
+    <string name="dashboard_monthly_income">आय</string>
+    <string name="dashboard_monthly_expenses">खर्च</string>
+    <string name="dashboard_add_transaction">लेन-देन जोड़ें</string>
+    
+    <!-- Activity / Search -->
+    <string name="activity_title">गतिविधि</string>
+    <string name="activity_search_placeholder">लेन-देन खोजें...</string>
+    <string name="activity_search_clear">साफ़ करें</string>
+    <string name="activity_filter_all">सभी</string>
+    <string name="activity_filter_food">भोजन</string>
+    <string name="activity_filter_transport">परिवहन</string>
+    <string name="activity_filter_shopping">खरीदारी</string>
+    <string name="activity_no_transactions">कोई लेन-देन नहीं मिला</string>
+    
+    <!-- General -->
+    <string name="error_unknown">एक अज्ञात त्रुटि हुई</string>
+</resources>
