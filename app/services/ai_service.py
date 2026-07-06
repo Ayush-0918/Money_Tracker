@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 # ── Provider Metrics & Circuit Breakers ──────────────────────────────────────
 
+
 class ProviderMetrics:
     def __init__(self):
         self.success_count = 0
@@ -36,8 +37,9 @@ class ProviderMetrics:
         return {
             "success_count": self.success_count,
             "failure_count": self.failure_count,
-            "avg_latency_seconds": avg_latency
+            "avg_latency_seconds": avg_latency,
         }
+
 
 class CircuitBreaker:
     def __init__(self, failure_threshold: int = 3, cooldown_seconds: float = 60.0):
@@ -68,7 +70,9 @@ class CircuitBreaker:
             return False
         return True
 
+
 # ── Provider Interface ──────────────────────────────────────────────────────
+
 
 class AIProvider(ABC):
     def __init__(self):
@@ -77,16 +81,14 @@ class AIProvider(ABC):
 
     @abstractmethod
     async def get_completion(
-        self, 
-        prompt: str, 
-        system_message: str, 
-        context: Optional[Dict[str, Any]] = None
+        self, prompt: str, system_message: str, context: Optional[Dict[str, Any]] = None
     ) -> Optional[str]:
         pass
 
     @abstractmethod
     async def is_healthy(self) -> bool:
         pass
+
 
 class GitHubModelsProvider(AIProvider):
     def __init__(self):
@@ -97,81 +99,91 @@ class GitHubModelsProvider(AIProvider):
         self.timeout = settings.AI_TIMEOUT_GITHUB
 
         # Initializing client only if token is present to avoid crashes
-        self.client = AsyncOpenAI(
-            base_url=self.endpoint,
-            api_key=self.token,
-            max_retries=3,
-            timeout=self.timeout
-        ) if self.token else None
+        self.client = (
+            AsyncOpenAI(base_url=self.endpoint, api_key=self.token, max_retries=3, timeout=self.timeout)
+            if self.token
+            else None
+        )
 
     async def get_completion(
-        self, 
-        prompt: str, 
-        system_message: str, 
-        context: Optional[Dict[str, Any]] = None
+        self, prompt: str, system_message: str, context: Optional[Dict[str, Any]] = None
     ) -> Optional[str]:
         if not self.client:
             return None
 
         if not self.circuit_breaker.allow_request():
-            logger.warning(json.dumps({
-                "event": "circuit_breaker_blocked",
-                "provider": "GitHubModelsProvider",
-                "state": self.circuit_breaker.state
-            }))
+            logger.warning(
+                json.dumps(
+                    {
+                        "event": "circuit_breaker_blocked",
+                        "provider": "GitHubModelsProvider",
+                        "state": self.circuit_breaker.state,
+                    }
+                )
+            )
             return None
 
         start_time = time.time()
         request_id = f"ai_{int(start_time)}"
-        logger.info(json.dumps({
-            "event": "ai_request_start",
-            "request_id": request_id,
-            "provider": "GitHubModelsProvider",
-            "model": self.model,
-            "prompt_length": len(prompt)
-        }))
+        logger.info(
+            json.dumps(
+                {
+                    "event": "ai_request_start",
+                    "request_id": request_id,
+                    "provider": "GitHubModelsProvider",
+                    "model": self.model,
+                    "prompt_length": len(prompt),
+                }
+            )
+        )
 
         try:
             response = await self.client.chat.completions.create(
                 model=self.model,
-                messages=[
-                    {"role": "system", "content": system_message},
-                    {"role": "user", "content": prompt}
-                ],
+                messages=[{"role": "system", "content": system_message}, {"role": "user", "content": prompt}],
                 temperature=0.1,
                 max_completion_tokens=200,
-                response_format={"type": "json_object"}
+                response_format={"type": "json_object"},
             )
             latency = time.time() - start_time
             self.metrics.record_success(latency)
             self.circuit_breaker.record_success()
 
-            logger.info(json.dumps({
-                "event": "ai_request_success",
-                "request_id": request_id,
-                "provider": "GitHubModelsProvider",
-                "latency_seconds": latency
-            }))
+            logger.info(
+                json.dumps(
+                    {
+                        "event": "ai_request_success",
+                        "request_id": request_id,
+                        "provider": "GitHubModelsProvider",
+                        "latency_seconds": latency,
+                    }
+                )
+            )
             return response.choices[0].message.content
         except Exception as e:
             latency = time.time() - start_time
             self.metrics.record_failure()
             self.circuit_breaker.record_failure()
 
-            logger.error(json.dumps({
-                "event": "ai_request_failure",
-                "request_id": request_id,
-                "provider": "GitHubModelsProvider",
-                "error": type(e).__name__,
-                "message": str(e),
-                "latency_seconds": latency
-            }))
+            logger.error(
+                json.dumps(
+                    {
+                        "event": "ai_request_failure",
+                        "request_id": request_id,
+                        "provider": "GitHubModelsProvider",
+                        "error": type(e).__name__,
+                        "message": str(e),
+                        "latency_seconds": latency,
+                    }
+                )
+            )
             return None
 
     async def is_healthy(self) -> bool:
         if not self.client:
             return False
         return self.circuit_breaker.state != "OPEN"
+
 
 class GroqProvider(AIProvider):
     def __init__(self):
@@ -181,75 +193,84 @@ class GroqProvider(AIProvider):
         self.model = settings.GROQ_MODEL
         self.timeout = settings.AI_TIMEOUT_GROQ
 
-        self.client = AsyncOpenAI(
-            base_url=self.endpoint,
-            api_key=self.api_key,
-            max_retries=3,
-            timeout=self.timeout
-        ) if self.api_key else None
+        self.client = (
+            AsyncOpenAI(base_url=self.endpoint, api_key=self.api_key, max_retries=3, timeout=self.timeout)
+            if self.api_key
+            else None
+        )
 
     async def get_completion(
-        self, 
-        prompt: str, 
-        system_message: str, 
-        context: Optional[Dict[str, Any]] = None
+        self, prompt: str, system_message: str, context: Optional[Dict[str, Any]] = None
     ) -> Optional[str]:
         if not self.client:
             return None
 
         if not self.circuit_breaker.allow_request():
-            logger.warning(json.dumps({
-                "event": "circuit_breaker_blocked",
-                "provider": "GroqProvider",
-                "state": self.circuit_breaker.state
-            }))
+            logger.warning(
+                json.dumps(
+                    {
+                        "event": "circuit_breaker_blocked",
+                        "provider": "GroqProvider",
+                        "state": self.circuit_breaker.state,
+                    }
+                )
+            )
             return None
 
         start_time = time.time()
         request_id = f"groq_{int(start_time)}"
-        logger.info(json.dumps({
-            "event": "ai_request_start",
-            "request_id": request_id,
-            "provider": "GroqProvider",
-            "model": self.model,
-            "prompt_length": len(prompt)
-        }))
+        logger.info(
+            json.dumps(
+                {
+                    "event": "ai_request_start",
+                    "request_id": request_id,
+                    "provider": "GroqProvider",
+                    "model": self.model,
+                    "prompt_length": len(prompt),
+                }
+            )
+        )
 
         try:
             response = await self.client.chat.completions.create(
                 model=self.model,
-                messages=[
-                    {"role": "system", "content": system_message},
-                    {"role": "user", "content": prompt}
-                ],
+                messages=[{"role": "system", "content": system_message}, {"role": "user", "content": prompt}],
                 temperature=0.1,
                 max_tokens=200,
-                response_format={"type": "json_object"}
+                response_format={"type": "json_object"},
             )
             latency = time.time() - start_time
             self.metrics.record_success(latency)
             self.circuit_breaker.record_success()
 
-            logger.info(json.dumps({
-                "event": "ai_request_success",
-                "request_id": request_id,
-                "provider": "GroqProvider",
-                "latency_seconds": latency
-            }))
+            logger.info(
+                json.dumps(
+                    {
+                        "event": "ai_request_success",
+                        "request_id": request_id,
+                        "provider": "GroqProvider",
+                        "latency_seconds": latency,
+                    }
+                )
+            )
             return response.choices[0].message.content
         except Exception as e:
             latency = time.time() - start_time
             self.metrics.record_failure()
             self.circuit_breaker.record_failure()
 
-            logger.error(json.dumps({
-                "event": "ai_request_failure",
-                "request_id": request_id,
-                "provider": "GroqProvider",
-                "error": type(e).__name__,
-                "message": str(e),
-                "latency_seconds": latency
-            }))
+            logger.error(
+                json.dumps(
+                    {
+                        "event": "ai_request_failure",
+                        "request_id": request_id,
+                        "provider": "GroqProvider",
+                        "error": type(e).__name__,
+                        "message": str(e),
+                        "latency_seconds": latency,
+                    }
+                )
+            )
             return None
 
     async def is_healthy(self) -> bool:
@@ -257,19 +278,18 @@ class GroqProvider(AIProvider):
             return False
         return self.circuit_breaker.state != "OPEN"
 
-from sqlalchemy import select
-from app.models.merchant import MerchantAlias, MerchantRule, UserOverride, AICategorizationCache
-from app.models.category import Category
+
+from sqlalchemy import select  # noqa: E402
+from app.models.merchant import MerchantAlias, MerchantRule, UserOverride, AICategorizationCache  # noqa: E402
+from app.models.category import Category  # noqa: E402
+
 
 class RuleEngineProvider(AIProvider):
     def __init__(self):
         super().__init__()
 
     async def get_completion(
-        self, 
-        prompt: str, 
-        system_message: str, 
-        context: Optional[Dict[str, Any]] = None
+        self, prompt: str, system_message: str, context: Optional[Dict[str, Any]] = None
     ) -> Optional[str]:
         if not context:
             return None
@@ -294,7 +314,7 @@ class RuleEngineProvider(AIProvider):
                 override_stmt = select(UserOverride).where(
                     UserOverride.user_id == user_id,
                     UserOverride.merchant_id == canonical_merchant_id,
-                    UserOverride.correction_count >= 2
+                    UserOverride.correction_count >= 2,
                 )
                 override_res = await db.execute(override_stmt)
                 override = override_res.scalar_one_or_none()
@@ -307,9 +327,7 @@ class RuleEngineProvider(AIProvider):
                         return f'{{"category": "{cat.name}"}}'
 
             # 2. Global Rule check
-            rule_stmt = select(MerchantRule).where(
-                MerchantRule.merchant_id == canonical_merchant_id
-            )
+            rule_stmt = select(MerchantRule).where(MerchantRule.merchant_id == canonical_merchant_id)
             rule_res = await db.execute(rule_stmt)
             rule = rule_res.scalar_one_or_none()
             if rule:
@@ -325,16 +343,14 @@ class RuleEngineProvider(AIProvider):
     async def is_healthy(self) -> bool:
         return True
 
+
 class ProviderManager(AIProvider):
     def __init__(self, providers: List[AIProvider]):
         super().__init__()
         self.providers = providers
 
     async def get_completion(
-        self, 
-        prompt: str, 
-        system_message: str, 
-        context: Optional[Dict[str, Any]] = None
+        self, prompt: str, system_message: str, context: Optional[Dict[str, Any]] = None
     ) -> Optional[str]:
         for provider in self.providers:
             if not await provider.is_healthy():
@@ -350,19 +366,24 @@ class ProviderManager(AIProvider):
                         return res
                 except Exception as e:
                     logger.warning(
-                        f"ProviderManager: Provider {provider.__class__.__name__} failed on attempt {attempt+1} - {str(e)}"
+                        f"ProviderManager: Provider {provider.__class__.__name__} failed on attempt "
+                        f"{attempt+1} - {str(e)}"
                     )
                     if attempt < retries - 1:
-                        await asyncio.sleep(delay * (2 ** attempt))
-            
-            logger.warning(f"ProviderManager: Provider {provider.__class__.__name__} failed completely. Falling back...")
-        
+                        await asyncio.sleep(delay * (2**attempt))
+
+            logger.warning(
+                f"ProviderManager: Provider {provider.__class__.__name__} failed completely. Falling back..."
+            )
+
         return None
 
     async def is_healthy(self) -> bool:
         return any([await p.is_healthy() for p in self.providers])
 
+
 # ── AI Service Core ────────────────────────────────────────────────────────
+
 
 class AIService:
     def __init__(self, provider: AIProvider):
@@ -372,12 +393,7 @@ class AIService:
         self._merchant_cache: Dict[str, str] = {}
 
     async def categorize_transaction(
-        self, 
-        merchant: str, 
-        amount: float, 
-        raw_text: str,
-        db: Optional[Any] = None,
-        user_id: Optional[Any] = None
+        self, merchant: str, amount: float, raw_text: str, db: Optional[Any] = None, user_id: Optional[Any] = None
     ) -> Optional[str]:
         """Categorizes a transaction using AI with a rule-based fallback."""
         if not self.enabled:
@@ -391,9 +407,7 @@ class AIService:
         # 2. Check Database Cache
         if db is not None:
             try:
-                db_cache_stmt = select(AICategorizationCache).where(
-                    AICategorizationCache.merchant_name == cache_key
-                )
+                db_cache_stmt = select(AICategorizationCache).where(AICategorizationCache.merchant_name == cache_key)
                 db_cache_res = await db.execute(db_cache_stmt)
                 db_cache = db_cache_res.scalar_one_or_none()
                 if db_cache:
@@ -408,26 +422,27 @@ class AIService:
         raw_lower = raw_text.lower()
         pre_category = None
 
-        if any(kw in raw_lower for kw in ["salary", "payroll", "wages", "neft salary", "credited salary"]) or \
-           any(kw in merchant_lower for kw in ["salary", "payroll", "wages"]):
+        if any(kw in raw_lower for kw in ["salary", "payroll", "wages", "neft salary", "credited salary"]) or any(
+            kw in merchant_lower for kw in ["salary", "payroll", "wages"]
+        ):
             pre_category = "Income"
         elif any(kw in raw_lower for kw in ["cashback", "refund", "reversal"]):
             pre_category = "Income"
-        elif any(kw in raw_lower for kw in ["emi", "loan repayment", "repayment of loan"]) or \
-             any(kw in merchant_lower for kw in ["emi", "loan repayment"]):
+        elif any(kw in raw_lower for kw in ["emi", "loan repayment", "repayment of loan"]) or any(
+            kw in merchant_lower for kw in ["emi", "loan repayment"]
+        ):
             pre_category = "Loans/EMI"
-        elif any(kw in raw_lower for kw in ["credit card payment", "credit card bill", "cc payment"]) or \
-             "credit card" in merchant_lower:
+        elif (
+            any(kw in raw_lower for kw in ["credit card payment", "credit card bill", "cc payment"])
+            or "credit card" in merchant_lower
+        ):
             pre_category = "Credit Card Payment"
 
         if pre_category:
             self._merchant_cache[cache_key] = pre_category
             if db is not None:
                 try:
-                    db_cache = AICategorizationCache(
-                        merchant_name=cache_key,
-                        category_name=pre_category
-                    )
+                    db_cache = AICategorizationCache(merchant_name=cache_key, category_name=pre_category)
                     await db.merge(db_cache)
                     await db.flush()
                     logger.info(f"Pre-classified Category Saved: {cache_key} -> {pre_category}")
@@ -441,45 +456,57 @@ class AIService:
             "Food, Shopping, Bills, Transport, Entertainment, Health, Investment, Income, Loans/EMI, "
             "Credit Card Payment, or Others."
         )
-        prompt = f"Merchant: {merchant}, Amount: ₹{amount}, Text: {raw_text}. Return JSON: {{\"category\": \"name\"}}"
+        prompt = f'Merchant: {merchant}, Amount: ₹{amount}, Text: {raw_text}. Return JSON: {{"category": "name"}}'
 
-        context = {
-            "merchant": merchant,
-            "amount": amount,
-            "raw_text": raw_text,
-            "db": db,
-            "user_id": user_id
-        }
-        result_json = await self.provider.get_completion(prompt, system_msg, context)
+        context = {"merchant": merchant, "amount": amount, "raw_text": raw_text, "db": db, "user_id": user_id}
+        result = await self.provider.get_completion(prompt, system_msg, context)
 
-        if result_json:
-            try:
-                data = json.loads(result_json)
-                category = data.get("category")
-                if category:
-                    self._merchant_cache[cache_key] = category
-                    # Save to database cache persistently
-                    if db is not None:
-                        try:
-                            db_cache = AICategorizationCache(
-                                merchant_name=cache_key,
-                                category_name=category
-                            )
-                            await db.merge(db_cache)
-                            await db.flush()
-                            logger.info(f"AI Cache Saved: {cache_key} -> {category}")
-                        except Exception as e:
-                            logger.error(f"Failed to save to AI categorization cache: {e}")
-                    return category
-            except json.JSONDecodeError:
-                pass
+        category = None
+        if result:
+            if isinstance(result, dict):
+                category = result.get("category")
+            elif isinstance(result, str):
+                result_stripped = result.strip()
+                try:
+                    data = json.loads(result_stripped)
+                    if isinstance(data, dict):
+                        category = data.get("category")
+                except Exception:
+                    category = result_stripped.strip("\"'")
+            else:
+                try:
+                    if hasattr(result, "choices") and result.choices:
+                        content = result.choices[0].message.content
+                        if content:
+                            content_stripped = content.strip()
+                            try:
+                                data = json.loads(content_stripped)
+                                if isinstance(data, dict):
+                                    category = data.get("category")
+                            except Exception:
+                                category = content_stripped.strip("\"'")
+                except Exception as e:
+                    logger.error(f"Failed to parse provider completion object: {e}")
 
-        return None # Fallback logic is handled in transaction_service.py
+            if category:
+                category = category.strip()
+                self._merchant_cache[cache_key] = category
+                if db is not None:
+                    try:
+                        db_cache = AICategorizationCache(merchant_name=cache_key, category_name=category)
+                        await db.merge(db_cache)
+                        await db.flush()
+                        logger.info(f"AI Cache Saved: {cache_key} -> {category}")
+                    except Exception as e:
+                        logger.error(f"Failed to save to AI categorization cache: {e}")
+                return category
+
+        return None  # Fallback logic is handled in transaction_service.py
 
     async def get_spending_insights(self, transactions: List[Dict[str, Any]]) -> Optional[str]:
         """Generates insights from a list of transactions."""
         system_msg = "Analyze the spending pattern and provide 2-3 bullet points of insights."
-        prompt = f"Transactions: {json.dumps(transactions)}. Return JSON: {{\"insights\": \"string\"}}"
+        prompt = f'Transactions: {json.dumps(transactions)}. Return JSON: {{"insights": "string"}}'
 
         result_json = await self.provider.get_completion(prompt, system_msg)
         return json.loads(result_json).get("insights") if result_json else None
@@ -487,7 +514,7 @@ class AIService:
     async def get_saving_tips(self, budget_status: Dict[str, Any]) -> Optional[str]:
         """Provides personalized saving tips based on current budget usage."""
         system_msg = "Provide 2 short, personalized saving tips based on the budget performance."
-        prompt = f"Budget Status: {json.dumps(budget_status)}. Return JSON: {{\"tips\": \"string\"}}"
+        prompt = f'Budget Status: {json.dumps(budget_status)}. Return JSON: {{"tips": "string"}}'
 
         result_json = await self.provider.get_completion(prompt, system_msg)
         return json.loads(result_json).get("tips") if result_json else None
@@ -495,15 +522,20 @@ class AIService:
     async def get_merchant_understanding(self, merchant_name: str) -> Optional[Dict[str, Any]]:
         """Deeply analyzes an unknown merchant name."""
         system_msg = "Analyze the merchant name and provide its business type and likely category."
-        prompt = f"Merchant: {merchant_name}. Return JSON: {{\"business_type\": \"string\", \"category\": \"string\"}}"
+        prompt = f'Merchant: {merchant_name}. Return JSON: {{"business_type": "string", "category": "string"}}'
 
         result_json = await self.provider.get_completion(prompt, system_msg)
         return json.loads(result_json) if result_json else None
 
-    async def get_budget_recommendations(self, historical_spending: List[Dict[str, Any]]) -> Optional[List[Dict[str, Any]]]:
+    async def get_budget_recommendations(
+        self, historical_spending: List[Dict[str, Any]]
+    ) -> Optional[List[Dict[str, Any]]]:
         """Recommends budget limits based on historical data."""
         system_msg = "Suggest monthly budget limits for each category based on the spending history."
-        prompt = f"History: {json.dumps(historical_spending)}. Return JSON: {{\"recommendations\": [ {{\"category\": \"string\", \"limit\": float}} ] }}"
+        prompt = (
+            f"History: {json.dumps(historical_spending)}. "
+            f'Return JSON: {{"recommendations": [ {{"category": "string", "limit": float}} ] }}'
+        )
 
         result_json = await self.provider.get_completion(prompt, system_msg)
         return json.loads(result_json).get("recommendations") if result_json else None
@@ -511,7 +543,7 @@ class AIService:
     async def get_monthly_summary(self, month_data: Dict[str, Any]) -> Optional[str]:
         """Generates a comprehensive monthly financial summary."""
         system_msg = "Generate a professional 3-sentence financial summary for the month."
-        prompt = f"Month Data: {json.dumps(month_data)}. Return JSON: {{\"summary\": \"string\"}}"
+        prompt = f'Month Data: {json.dumps(month_data)}. Return JSON: {{"summary": "string"}}'
 
         result_json = await self.provider.get_completion(prompt, system_msg)
         return json.loads(result_json).get("summary") if result_json else None
@@ -524,7 +556,7 @@ class AIService:
             "Highlight budget overruns, large category jumps (e.g. food vs last month), "
             "active subscriptions count, and recommendations to save money."
         )
-        prompt = f"Data: {json.dumps(summary_data)}. Return JSON: {{\"insights\": [\"tip1\", \"tip2\"]}}"
+        prompt = f'Data: {json.dumps(summary_data)}. Return JSON: {{"insights": ["tip1", "tip2"]}}'
 
         result_json = await self.provider.get_completion(prompt, system_msg)
         if result_json:
@@ -535,23 +567,25 @@ class AIService:
                 pass
         return None
 
+
 # Dependency Injection helper
 def get_ai_service() -> AIService:
     providers = []
-    
+
     # 1. Groq (Primary)
     if settings.GROQ_API_KEY:
         providers.append(GroqProvider())
-        
+
     # 2. GitHub Models (Secondary)
     if settings.GITHUB_TOKEN:
         providers.append(GitHubModelsProvider())
-        
+
     # 3. Rule Engine (Offline Fallback)
     providers.append(RuleEngineProvider())
-    
+
     manager = ProviderManager(providers)
     return AIService(manager)
+
 
 # Global instance for legacy support (if needed)
 ai_service = get_ai_service()
