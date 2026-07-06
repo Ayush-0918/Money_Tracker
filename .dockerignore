@@ -1,0 +1,36 @@
+# Exclude python virtual environment and caches
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Exclude git metadata
+.git/
+.github/
+
+# Exclude Android client app
+android-app/
+
+# Exclude local configs and secrets
+.env
+local.properties
+*.local
+
+# Exclude IDE settings
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Exclude docs and artifacts
+ARCHITECTURE.md
+README.md
+*.log
+tests/
