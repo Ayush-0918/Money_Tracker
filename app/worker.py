@@ -32,6 +32,14 @@ celery_app.conf.update(
             "task": "generate_sunday_money_story",
             "schedule": crontab(hour=3, minute=30, day_of_week=0),  # Sunday 03:30 UTC = 09:00 IST
         },
+        "scan-budgets-beat": {
+            "task": "scan_budgets_task",
+            "schedule": crontab(minute=0, hour="*/6"),  # every 6 hours
+        },
+        "scan-subscriptions-beat": {
+            "task": "scan_subscriptions_task",
+            "schedule": crontab(minute=30, hour=1),  # daily at 01:30 UTC
+        },
     },
 )
 
@@ -158,4 +166,61 @@ def generate_sunday_money_story():
     count = asyncio.run(_run())
     print(f"[MoneyStory] Sunday pre-computation complete. Stories generated: {count}")
     return f"Sunday Money Stories pre-computed for {count} users"
+
+
+@celery_app.task(name="scan_budgets_task")
+def scan_budgets_task():
+    """
+    Celery Beat task running every 6 hours to scan budget thresholds
+    and dispatch push alerts if spent >= 80%.
+    """
+    import asyncio
+
+    async def _run():
+        from sqlalchemy.orm import sessionmaker
+        from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+        from app.config import settings as _cfg
+        from app.services.notification_service import scan_budget_thresholds
+
+        engine = create_async_engine(_cfg.DATABASE_URL, echo=False)
+        async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+        async with async_session() as session:
+            count = await scan_budget_thresholds(db=session)
+
+        await engine.dispose()
+        return count
+
+    count = asyncio.run(_run())
+    print(f"[Worker] Budget scanners triggered. Alerts created: {count}")
+    return f"Triggered {count} budget alerts"
+
+
+@celery_app.task(name="scan_subscriptions_task")
+def scan_subscriptions_task():
+    """
+    Celery Beat task running daily to check subscriptions due in 24 hours
+    and dispatch auto-debit alerts.
+    """
+    import asyncio
+
+    async def _run():
+        from sqlalchemy.orm import sessionmaker
+        from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+        from app.config import settings as _cfg
+        from app.services.notification_service import scan_subscription_dues
+
+        engine = create_async_engine(_cfg.DATABASE_URL, echo=False)
+        async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+        async with async_session() as session:
+            count = await scan_subscription_dues(db=session)
+
+        await engine.dispose()
+        return count
+
+    count = asyncio.run(_run())
+    print(f"[Worker] Subscription scanners triggered. Alerts created: {count}")
+    return f"Triggered {count} auto-debit alerts"
+
 

@@ -27,6 +27,8 @@ import com.example.moneytracker.ui.family.FamilyViewModel
 import com.example.moneytracker.ui.family.FamilyScreen
 import com.example.moneytracker.ui.dreams.DreamViewModel
 import com.example.moneytracker.ui.dreams.DreamScreen
+import com.example.moneytracker.ui.notifications.NotificationViewModel
+import com.example.moneytracker.ui.notifications.NotificationScreen
 import com.example.moneytracker.ui.budget.BudgetViewModel
 import com.example.moneytracker.ui.budget.BudgetViewModelFactory
 import com.example.moneytracker.ui.onboarding.LanguageSelectionScreen
@@ -223,6 +225,20 @@ class MainActivity : ComponentActivity() {
                         )
                         DreamScreen(
                             viewModel = dreamViewModel,
+                            onNavigateBack = { navController.popBackStack() }
+                        )
+                    }
+                    composable("notifications") {
+                        val notificationRepository = ServiceLocator.provideNotificationRepository(applicationContext)
+                        val notificationViewModel = androidx.lifecycle.viewmodel.compose.viewModel<NotificationViewModel>(
+                            factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+                                override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                                    return NotificationViewModel(notificationRepository) as T
+                                }
+                            }
+                        )
+                        NotificationScreen(
+                            viewModel = notificationViewModel,
                             onNavigateBack = { navController.popBackStack() }
                         )
                     }

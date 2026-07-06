@@ -154,4 +154,18 @@ interface ApiService {
         @Path("dreamId") dreamId: String,
         @Body request: DreamUpdateProgressDto
     ): Response<DreamResponseDto>
+
+    // ── Notifications ─────────────────────────────────────────────────────────
+    @POST("notifications/register")
+    suspend fun registerDevice(
+        @Body request: com.example.moneytracker.data.remote.dto.DeviceTokenRegisterDto
+    ): Response<Map<String, String>>
+
+    @GET("notifications")
+    suspend fun getNotifications(): Response<List<com.example.moneytracker.data.remote.dto.NotificationDto>>
+
+    @POST("notifications/read")
+    suspend fun readNotifications(
+        @Body ids: List<String>
+    ): Response<Map<String, Any>>
 }

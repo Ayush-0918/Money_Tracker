@@ -17,6 +17,7 @@ from app.models.merchant import Merchant, MerchantAlias, MerchantRule, UserOverr
 from app.models.budget import Budget
 from app.models.family import FamilyWallet, FamilyMember, SharedExpense
 from app.models.dream import Dream
+from app.models.notification import DeviceToken, Notification
 
 __all__ = [
     "Base",
@@ -37,4 +38,6 @@ __all__ = [
     "FamilyMember",
     "SharedExpense",
     "Dream",
+    "DeviceToken",
+    "Notification",
 ]
