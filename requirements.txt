@@ -32,3 +32,7 @@ python-dotenv==1.0.1        # Load .env (also handled by pydantic-settings)
 sentry-sdk[fastapi]==2.1.1
 redis==5.0.4
 celery==5.3.6
+
+# ── AI Services ───────────────────────────────────────────────────────────────
+openai==2.44.0
+
