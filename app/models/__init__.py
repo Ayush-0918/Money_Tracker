@@ -15,6 +15,7 @@ from app.models.subscription import Subscription
 from app.models.category import Category
 from app.models.merchant import Merchant, MerchantAlias, MerchantRule, UserOverride, LearningEvent
 from app.models.budget import Budget
+from app.models.family import FamilyWallet, FamilyMember, SharedExpense
 
 __all__ = [
     "Base",
@@ -31,4 +32,7 @@ __all__ = [
     "UserOverride",
     "LearningEvent",
     "Budget",
+    "FamilyWallet",
+    "FamilyMember",
+    "SharedExpense",
 ]

@@ -20,6 +20,11 @@ import com.example.moneytracker.data.remote.dto.CategoryUpdateDto
 import com.example.moneytracker.data.remote.dto.AIPredictionResponseDto
 import com.example.moneytracker.data.remote.dto.WeeklyReportResponseDto
 import com.example.moneytracker.data.remote.dto.MoneyStoryResponseDto
+import com.example.moneytracker.data.remote.dto.FamilyWalletCreateDto
+import com.example.moneytracker.data.remote.dto.FamilyWalletResponseDto
+import com.example.moneytracker.data.remote.dto.SharedExpenseCreateDto
+import com.example.moneytracker.data.remote.dto.SharedExpenseDto
+import com.example.moneytracker.data.remote.dto.FamilySummaryResponseDto
 
 interface ApiService {
     @POST("auth/register")
@@ -101,4 +106,34 @@ interface ApiService {
     suspend fun refreshMoneyStory(
         @Path("userId") userId: String
     ): Response<MoneyStoryResponseDto>
+
+    // ── Family Wallet ────────────────────────────────────────────────────────
+    @POST("family/create")
+    suspend fun createFamilyWallet(
+        @Body request: FamilyWalletCreateDto
+    ): Response<FamilyWalletResponseDto>
+
+    @POST("family/join")
+    suspend fun joinFamilyWallet(
+        @Query("invite_code") inviteCode: String
+    ): Response<FamilyWalletResponseDto>
+
+    @GET("family/wallets")
+    suspend fun getFamilyWallets(): Response<List<FamilyWalletResponseDto>>
+
+    @GET("family/{walletId}")
+    suspend fun getFamilyWalletDetails(
+        @Path("walletId") walletId: String
+    ): Response<FamilyWalletResponseDto>
+
+    @POST("family/{walletId}/expense")
+    suspend fun addFamilyExpense(
+        @Path("walletId") walletId: String,
+        @Body request: SharedExpenseCreateDto
+    ): Response<SharedExpenseDto>
+
+    @GET("family/{walletId}/summary")
+    suspend fun getFamilySummary(
+        @Path("walletId") walletId: String
+    ): Response<FamilySummaryResponseDto>
 }

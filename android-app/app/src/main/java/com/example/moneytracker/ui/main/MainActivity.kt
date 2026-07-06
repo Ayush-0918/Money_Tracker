@@ -23,6 +23,8 @@ import com.example.moneytracker.ui.analytics.PredictionViewModelFactory
 import com.example.moneytracker.ui.analytics.PredictionScreen
 import com.example.moneytracker.ui.reports.WeeklyReportViewModel
 import com.example.moneytracker.ui.reports.WeeklyReportScreen
+import com.example.moneytracker.ui.family.FamilyViewModel
+import com.example.moneytracker.ui.family.FamilyScreen
 import com.example.moneytracker.ui.budget.BudgetViewModel
 import com.example.moneytracker.ui.budget.BudgetViewModelFactory
 import com.example.moneytracker.ui.onboarding.LanguageSelectionScreen
@@ -192,6 +194,20 @@ class MainActivity : ComponentActivity() {
                         MoneyStoryScreen(
                             viewModel = moneyStoryViewModel,
                             onBack = { navController.popBackStack() }
+                        )
+                    }
+                    composable("family") {
+                        val familyRepository = ServiceLocator.provideFamilyRepository(applicationContext)
+                        val familyViewModel = androidx.lifecycle.viewmodel.compose.viewModel<FamilyViewModel>(
+                            factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+                                override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                                    return FamilyViewModel(familyRepository) as T
+                                }
+                            }
+                        )
+                        FamilyScreen(
+                            viewModel = familyViewModel,
+                            onNavigateBack = { navController.popBackStack() }
                         )
                     }
                 }

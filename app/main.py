@@ -25,7 +25,7 @@ from slowapi.errors import RateLimitExceeded
 from sqlalchemy import text
 
 from app.utils.limiter import limiter
-from app.api import auth, reports, transactions, admin, dashboard, budgets, categories, predictions, money_story
+from app.api import auth, reports, transactions, admin, dashboard, budgets, categories, predictions, money_story, family
 from app.config import settings
 from app.database import engine
 from app.models import Base
@@ -163,6 +163,7 @@ def create_app() -> FastAPI:
     app.include_router(categories.router)
     app.include_router(predictions.router)
     app.include_router(money_story.router)
+    app.include_router(family.router)
 
     # ── Health Check ──────────────────────────────────────────────────────────
     @app.get(
