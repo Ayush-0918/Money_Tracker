@@ -52,4 +52,61 @@ class SecurePrefs(context: Context) {
     fun getToken(): String? {
         return prefs.getString("auth_token", null)
     }
+
+    fun saveDashboardSummary(summary: com.example.moneytracker.data.remote.dto.DashboardSummaryDto) {
+        val json = com.google.gson.Gson().toJson(summary)
+        prefs.edit().putString("cache_dashboard_summary", json).apply()
+    }
+
+    fun getDashboardSummary(): com.example.moneytracker.data.remote.dto.DashboardSummaryDto? {
+        val json = prefs.getString("cache_dashboard_summary", null) ?: return null
+        return try {
+            com.google.gson.Gson().fromJson(json, com.example.moneytracker.data.remote.dto.DashboardSummaryDto::class.java)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    fun saveMonthlyReport(report: com.example.moneytracker.data.remote.dto.MonthlyReportDto) {
+        val json = com.google.gson.Gson().toJson(report)
+        prefs.edit().putString("cache_monthly_report", json).apply()
+    }
+
+    fun getMonthlyReport(): com.example.moneytracker.data.remote.dto.MonthlyReportDto? {
+        val json = prefs.getString("cache_monthly_report", null) ?: return null
+        return try {
+            com.google.gson.Gson().fromJson(json, com.example.moneytracker.data.remote.dto.MonthlyReportDto::class.java)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    fun saveWeeklyReport(report: com.example.moneytracker.data.remote.dto.WeeklyActivityDto) {
+        val json = com.google.gson.Gson().toJson(report)
+        prefs.edit().putString("cache_weekly_report", json).apply()
+    }
+
+    fun getWeeklyReport(): com.example.moneytracker.data.remote.dto.WeeklyActivityDto? {
+        val json = prefs.getString("cache_weekly_report", null) ?: return null
+        return try {
+            com.google.gson.Gson().fromJson(json, com.example.moneytracker.data.remote.dto.WeeklyActivityDto::class.java)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    fun saveSubscriptionReport(subscriptions: List<com.example.moneytracker.data.remote.dto.SubscriptionDto>) {
+        val json = com.google.gson.Gson().toJson(subscriptions)
+        prefs.edit().putString("cache_subscriptions", json).apply()
+    }
+
+    fun getSubscriptionReport(): List<com.example.moneytracker.data.remote.dto.SubscriptionDto>? {
+        val json = prefs.getString("cache_subscriptions", null) ?: return null
+        return try {
+            val type = object : com.google.gson.reflect.TypeToken<List<com.example.moneytracker.data.remote.dto.SubscriptionDto>>() {}.type
+            com.google.gson.Gson().fromJson(json, type)
+        } catch (e: Exception) {
+            null
+        }
+    }
 }

@@ -12,6 +12,7 @@ from __future__ import annotations
 from typing import Optional, List, Dict
 
 from pydantic import BaseModel
+from app.schemas.budget import BudgetSummaryResponse
 
 
 # ── Monthly Report ────────────────────────────────────────────────────────────
@@ -58,3 +59,13 @@ class DashboardSummaryDto(BaseModel):
     top_categories: Dict[str, float]
     upcoming_subscriptions: List[SubscriptionDto]
     weekly_activity: WeeklyActivityDto
+    budgets: List[BudgetSummaryResponse] = []
+    ai_insights: Optional[str] = None
+    saving_tips: Optional[str] = None
+
+
+class CoachReportDto(BaseModel):
+    insights: List[str]
+    active_subscriptions: int
+    financial_health_score: int
+    budget_runout_days: Optional[int] = None

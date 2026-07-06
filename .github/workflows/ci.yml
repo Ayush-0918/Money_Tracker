@@ -1,0 +1,48 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        cache: 'pip'
+
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install flake8 black
+
+    - name: Lint with black
+      run: |
+        # Check formatting only (no auto-formatting in CI)
+        black --check app tests --line-length 120 || true
+
+    - name: Lint with flake8
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 app tests --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings
+        flake8 app tests --count --exit-zero --max-complexity=10 --max-line-length=120 --statistics
+
+    - name: Run Tests with Pytest
+      env:
+        DATABASE_URL: sqlite+aiosqlite:///:memory:
+        JWT_SECRET_KEY: test_jwt_secret_key_must_be_at_least_32_characters_long
+        AI_ENABLED: false
+        slowapi_bypass: true
+      run: |
+        pytest -v
