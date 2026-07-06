@@ -130,3 +130,15 @@ class LearningEvent(Base):
     )
     feedback_source: Mapped[Optional[str]] = mapped_column(String, nullable=True) # e.g. MANUAL
     processed: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+
+
+class AICategorizationCache(Base):
+    __tablename__ = "ai_categorization_caches"
+
+    merchant_name: Mapped[str] = mapped_column(String, primary_key=True)
+    category_name: Mapped[str] = mapped_column(String, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )

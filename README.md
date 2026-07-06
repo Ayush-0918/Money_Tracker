@@ -1,8 +1,8 @@
-# Money Tracker Backend
+# Money Tracker AI
 
-Production-quality FastAPI backend for the Money Tracker Android app.
+Production-quality FastAPI backend for the Money Tracker Android app, powered by GitHub Models.
 
-Receives Android payment notifications → filters OTP → parses transactions → stores in PostgreSQL (Supabase) → serves spending reports.
+Receives Android payment notifications → filters OTP → parses transactions → **AI Categorization (GPT-4o)** → stores in PostgreSQL (Supabase) → serves spending reports & insights.
 
 ---
 
@@ -64,6 +64,13 @@ pip install -r requirements.txt
 cp .env.example .env
 # Edit .env — fill in DATABASE_URL and generate JWT_SECRET_KEY:
 python3 -c "import secrets; print(secrets.token_hex(32))"
+
+# ── GitHub Models ─────────────────────────────────────────────────────────────
+# Get token from: https://github.com/marketplace/models
+GITHUB_TOKEN=your_github_pat
+GITHUB_MODEL=openai/gpt-4o
+GITHUB_MODELS_ENDPOINT=https://models.inference.ai.azure.com
+AI_ENABLED=true
 
 # 5. Run the server
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
@@ -228,3 +235,21 @@ Android App
 | `ALLOWED_ORIGINS` | ❌ | Comma-separated CORS origins. Default: `http://localhost:3000` |
 | `RATE_LIMIT_PER_MINUTE` | ❌ | POST /transactions limit per user. Default: `20` |
 | `ENVIRONMENT` | ❌ | `development` (auto-creates tables) or `production` |
+| `GROQ_API_KEY` | ❌ | API Key for Groq Cloud. Enabled when provided. |
+| `GROQ_MODEL` | ❌ | Default: `llama-3.3-70b-versatile` |
+| `GITHUB_TOKEN` | ❌ | Token for GitHub Models. Enabled when provided. |
+| `GITHUB_MODEL` | ❌ | Default: `openai/gpt-5` |
+| `AI_TIMEOUT_GROQ` | ❌ | Timeout in seconds for Groq API calls. Default: `10.0` |
+| `AI_TIMEOUT_GITHUB` | ❌ | Timeout in seconds for GitHub Models API calls. Default: `10.0` |
+
+---
+
+## AI Resilience & Circuit Breakers
+
+The backend implements a decoupled `AIProvider` model with auto-failover and circuit breakers:
+1. **Groq Provider** (Primary, if key present)
+2. **GitHub Models Provider** (Secondary, if token present)
+3. **Local Database Rule Engine** (Fallback)
+
+If a provider fails repeatedly (3 consecutive failures), its circuit breaker transitions to `OPEN` for a 60-second cooldown period, causing requests to immediately fall back to secondary providers. Caching is stored persistently in the database (`ai_categorization_caches`) to reduce redundant API calls.
+

@@ -15,6 +15,14 @@ Usage:
 
 import logging
 import sys
+from contextvars import ContextVar
+
+request_id_ctx_var: ContextVar[str] = ContextVar("request_id", default="-")
+
+class RequestIdFilter(logging.Filter):
+    def filter(self, record):
+        record.request_id = request_id_ctx_var.get() or "-"
+        return True
 
 
 def configure_logging() -> None:
@@ -34,18 +42,19 @@ def configure_logging() -> None:
     log_level = logging.DEBUG if settings.ENVIRONMENT == "development" else logging.INFO
 
     log_format = (
-        "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
+        "%(asctime)s | %(levelname)-8s | %(name)s | %(request_id)s | %(message)s"
     )
     date_format = "%Y-%m-%d %H:%M:%S"
 
-    logging.basicConfig(
-        level=log_level,
-        format=log_format,
-        datefmt=date_format,
-        handlers=[
-            logging.StreamHandler(sys.stdout),
-        ],
-    )
+    root_logger = logging.getLogger()
+    for handler in root_logger.handlers[:]:
+        root_logger.removeHandler(handler)
+
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(logging.Formatter(log_format, date_format))
+    handler.addFilter(RequestIdFilter())
+    root_logger.addHandler(handler)
+    root_logger.setLevel(log_level)
 
     # Suppress noisy third-party loggers in production
     if settings.ENVIRONMENT == "production":

@@ -10,6 +10,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -39,7 +40,15 @@ class ActivityViewModel(
     private val pageSize = 20
 
     init {
-        loadTransactions(reset = true)
+        // SSOT: Observe local cache
+        viewModelScope.launch {
+            repository.getCachedTransactions().collectLatest { cached ->
+                if (cached.isNotEmpty()) {
+                    _uiState.update { it.copy(transactions = cached, isLoading = false) }
+                }
+            }
+        }
+        refresh() // Initial network sync
     }
 
     fun onSearchQueryChanged(query: String) {
@@ -67,7 +76,13 @@ class ActivityViewModel(
     }
 
     fun refresh() {
-        loadTransactions(reset = true)
+        _uiState.update { it.copy(isLoading = true, error = null) }
+        viewModelScope.launch {
+            val result = repository.refreshTransactions()
+            if (result.isFailure) {
+                _uiState.update { it.copy(isLoading = false, error = result.exceptionOrNull()?.message) }
+            }
+        }
     }
 
     private fun loadTransactions(reset: Boolean) {
