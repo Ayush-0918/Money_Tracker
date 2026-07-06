@@ -25,6 +25,13 @@ class AuthInterceptor(private val securePrefs: SecurePrefs) : Interceptor {
             originalRequest
         }
         
-        return chain.proceed(newRequest)
+        val response = chain.proceed(newRequest)
+        if (response.code == 401) {
+            android.util.Log.e("AuthInterceptor", "HTTP 401 Unauthorized detected! Clearing local token.")
+            securePrefs.saveToken("")
+            securePrefs.saveUserId("")
+            com.example.moneytracker.di.ServiceLocator.notifyAuthExpired()
+        }
+        return response
     }
 }
