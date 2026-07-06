@@ -9,6 +9,7 @@ async def test_ai_categorization_success():
     mock_provider.get_completion = AsyncMock(return_value='{"category": "Food"}')
 
     service = AIService(provider=mock_provider)
+    service.enabled = True
     category = await service.categorize_transaction("Swiggy", 500.0, "Food delivery")
 
     assert category == "Food"
@@ -20,6 +21,7 @@ async def test_ai_categorization_cache():
     mock_provider.get_completion = AsyncMock(return_value='{"category": "Food"}')
 
     service = AIService(provider=mock_provider)
+    service.enabled = True
 
     # First call
     await service.categorize_transaction("Swiggy", 500.0, "Food delivery")
@@ -35,6 +37,8 @@ async def test_ai_categorization_fallback():
     mock_provider.get_completion = AsyncMock(return_value=None) # Simulate failure
 
     service = AIService(provider=mock_provider)
+    service.enabled = True
     category = await service.categorize_transaction("Unknown", 100.0, "Random")
 
     assert category is None # Fallback to rules in transaction_service.py
+
