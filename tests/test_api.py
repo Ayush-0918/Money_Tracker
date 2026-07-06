@@ -20,17 +20,11 @@ To run:
 """
 
 import uuid
-from collections.abc import AsyncGenerator
 
 import pytest
-import pytest_asyncio
 from fastapi import status
-from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from httpx import AsyncClient
 
-from app.database import get_db
-from app.main import app
-from app.models import Base
 
 # ── Test Client Helper ────────────────────────────────────────────────────────
 

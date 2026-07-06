@@ -1,10 +1,8 @@
 import pytest
-from unittest.mock import AsyncMock, MagicMock
-from app.services.ai_service import AIProvider, ProviderManager, RuleEngineProvider, AIService
+from app.services.ai_service import AIProvider, ProviderManager, RuleEngineProvider
 from app.models.category import Category
-from app.models.merchant import Merchant, MerchantAlias, MerchantRule, UserOverride
+from app.models.merchant import Merchant, MerchantAlias, MerchantRule
 import uuid
-from sqlalchemy import select
 
 
 class DummyHealthyProvider(AIProvider):

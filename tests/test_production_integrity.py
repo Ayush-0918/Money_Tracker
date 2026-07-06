@@ -1,6 +1,4 @@
 import pytest
-import uuid
-from fastapi import status
 from httpx import AsyncClient
 from .test_api import register_user
 

@@ -46,8 +46,6 @@ class ParseError(Exception):
     so keep it descriptive but free of internal implementation details.
     """
 
-    pass
-
 
 # ── Regex Patterns ────────────────────────────────────────────────────────────
 #

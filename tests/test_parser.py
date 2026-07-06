@@ -139,7 +139,6 @@ class TestDateExtraction:
 
     def test_date_is_timezone_aware(self):
         """Parsed dates must be timezone-aware (UTC)."""
-        import datetime
 
         result = parse_transaction("Rs.100 paid to Swiggy.")
         assert result.transaction_date.tzinfo is not None

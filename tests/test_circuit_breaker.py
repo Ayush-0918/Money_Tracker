@@ -1,5 +1,3 @@
-import pytest
-import asyncio
 from app.services.ai_service import CircuitBreaker, ProviderMetrics
 
 

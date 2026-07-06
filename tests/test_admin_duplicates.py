@@ -1,16 +1,11 @@
 import pytest
-import pytest_asyncio
-from httpx import ASGITransport, AsyncClient
+from httpx import AsyncClient
 from datetime import datetime, timezone, timedelta
 from sqlalchemy.future import select
 from sqlalchemy import func
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from collections.abc import AsyncGenerator
+from sqlalchemy.ext.asyncio import AsyncSession
 import uuid
 
-from app.main import app
-from app.database import get_db
-from app.models import Base
 from app.models.transaction import Transaction
 from app.models.deleted_transaction import DeletedTransaction
 

@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Optional
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import DateTime, ForeignKey, Numeric, UniqueConstraint, func
+from sqlalchemy import DateTime, ForeignKey, Numeric, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 

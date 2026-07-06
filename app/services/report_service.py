@@ -5,7 +5,7 @@ Query logic for monthly and subscription reports formatting to Android DTOs.
 """
 
 import uuid
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal, ROUND_HALF_UP
 from zoneinfo import ZoneInfo
 

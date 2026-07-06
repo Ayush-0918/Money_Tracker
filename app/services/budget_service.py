@@ -11,7 +11,7 @@ from uuid import UUID
 from typing import List, Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, text
+from sqlalchemy import select, func
 
 from app.models.budget import Budget
 from app.models.transaction import Transaction

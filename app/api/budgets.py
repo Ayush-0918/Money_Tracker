@@ -12,7 +12,6 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from app.api.deps import get_current_user_id, get_db
-from app.config import settings
 from app.utils.limiter import limiter
 from app.models.budget import Budget
 from app.schemas.budget import BudgetCreate, BudgetResponse, BudgetSummaryResponse

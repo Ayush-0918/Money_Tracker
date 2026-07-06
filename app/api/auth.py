@@ -11,8 +11,6 @@ This endpoint intentionally does NOT require a pre-existing token so that
 new Android app installations can register on first launch.
 """
 
-import uuid
-
 from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession

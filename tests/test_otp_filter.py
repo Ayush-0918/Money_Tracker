@@ -16,8 +16,6 @@ To run:
     pytest tests/test_otp_filter.py -v
 """
 
-import pytest
-
 from app.utils.otp_filter import get_pattern_count, is_otp_message
 
 

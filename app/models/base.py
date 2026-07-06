@@ -10,7 +10,6 @@ registration) and optionally TimestampMixin (for automatic created_at).
 import uuid
 
 from sqlalchemy import DateTime, func
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -21,8 +20,6 @@ class Base(DeclarativeBase):
     All ORM model classes must inherit from this Base so that
     Alembic can discover them for auto-generated migrations.
     """
-
-    pass
 
 
 class TimestampMixin:

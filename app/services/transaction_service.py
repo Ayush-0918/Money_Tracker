@@ -14,20 +14,17 @@ exceptions (ParseError, OTPError) and lets the route handler convert them
 to appropriate HTTP responses.
 """
 
-import uuid
-from datetime import datetime, timezone
-
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.transaction import Transaction
-from app.models.merchant import Merchant, MerchantAlias, MerchantRule, UserOverride
+from app.models.merchant import MerchantAlias, MerchantRule, UserOverride
 from app.models.budget import Budget
 from app.models.category import Category
 from app.schemas.transaction import TransactionCreate, TransactionResponse
 from app.utils.logging_config import get_logger
 from app.utils.otp_filter import is_otp_message
-from app.utils.parser import ParseError, parse_transaction
+from app.utils.parser import parse_transaction
 from app.services.ai_service import ai_service
 from app.services.subscription_service import check_and_update_recurring
 
@@ -40,8 +37,6 @@ class OTPDetectedError(Exception):
     The route handler converts this to HTTP 400.
     Nothing has been written to the database at this point.
     """
-
-    pass
 
 
 async def create_transaction(
