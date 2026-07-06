@@ -40,6 +40,7 @@ class OTPDetectedError(Exception):
     The route handler converts this to HTTP 400.
     Nothing has been written to the database at this point.
     """
+
     pass
 
 
@@ -81,8 +82,7 @@ async def create_transaction(
         existing = existing_result.scalar_one_or_none()
         if existing:
             logger.info(
-                "transaction_service: idempotency hit — returning existing | "
-                "key=%s | transaction_id=%s",
+                "transaction_service: idempotency hit — returning existing | " "key=%s | transaction_id=%s",
                 payload.idempotency_key,
                 existing.id,
             )
@@ -103,14 +103,10 @@ async def create_transaction(
     # ── Step 2.5: AI Categorization ───────────────────────────────────────────
     # Primary: AI Inference (GitHub Models)
     # Fallback: Rules-based system
-    
+
     final_category_id = None
     ai_category_name = await ai_service.categorize_transaction(
-        merchant=parsed.merchant,
-        amount=float(parsed.amount),
-        raw_text=payload.raw_text,
-        db=db,
-        user_id=payload.user_id
+        merchant=parsed.merchant, amount=float(parsed.amount), raw_text=payload.raw_text, db=db, user_id=payload.user_id
     )
 
     if ai_category_name:
@@ -135,7 +131,7 @@ async def create_transaction(
             override_stmt = select(UserOverride).where(
                 UserOverride.user_id == payload.user_id,
                 UserOverride.merchant_id == canonical_merchant_id,
-                UserOverride.correction_count >= 2
+                UserOverride.correction_count >= 2,
             )
             override_res = await db.execute(override_stmt)
             override = override_res.scalar_one_or_none()
@@ -145,9 +141,7 @@ async def create_transaction(
                 logger.info("Categorized by UserOverride fallback")
             else:
                 # Check Global Rule
-                rule_stmt = select(MerchantRule).where(
-                    MerchantRule.merchant_id == canonical_merchant_id
-                )
+                rule_stmt = select(MerchantRule).where(MerchantRule.merchant_id == canonical_merchant_id)
                 rule_res = await db.execute(rule_stmt)
                 rule = rule_res.scalar_one_or_none()
                 if rule:
@@ -159,24 +153,21 @@ async def create_transaction(
         user_id=payload.user_id,
         amount=parsed.amount,
         merchant=parsed.merchant,
-        category=None, # Legacy text field (deprecated in PR-5)
+        category=None,  # Legacy text field (deprecated in PR-5)
         category_id=final_category_id,
         transaction_date=parsed.transaction_date,
         source=payload.source,
         is_recurring=False,  # Updated below after recurring check
         raw_text=payload.raw_text,  # Safe to store: OTP filter already passed
         idempotency_key=payload.idempotency_key,  # May be None (optional)
-        currency="INR",       # Phase 1-2: INR only. Multi-currency in Phase 3.
+        currency="INR",  # Phase 1-2: INR only. Multi-currency in Phase 3.
     )
     db.add(transaction)
     await db.flush()  # Get the auto-generated ID without committing yet
 
     # ── Step 3.5: Invalidate Budget Cache ─────────────────────────────────────
     if final_category_id:
-        budget_stmt = select(Budget).where(
-            Budget.user_id == payload.user_id,
-            Budget.category_id == final_category_id
-        )
+        budget_stmt = select(Budget).where(Budget.user_id == payload.user_id, Budget.category_id == final_category_id)
         budget = (await db.execute(budget_stmt)).scalar_one_or_none()
         if budget:
             budget.cached_updated_at = None

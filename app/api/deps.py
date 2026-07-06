@@ -55,12 +55,15 @@ async def get_current_user_id(
             headers={"WWW-Authenticate": "Bearer"},
         )
     return verify_access_token(credentials.credentials)
+
+
 from fastapi import Security, HTTPException, status
 from fastapi.security import APIKeyHeader
 from app.config import settings
 
 # Dependency for admin API key
 admin_api_key_header = APIKeyHeader(name="X-Admin-Key", auto_error=True)
+
 
 async def verify_admin_api_key(api_key: str = Security(admin_api_key_header)):
     if api_key != settings.ADMIN_API_KEY:

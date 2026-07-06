@@ -18,6 +18,7 @@ from app.models.base import Base, new_uuid
 if TYPE_CHECKING:
     from app.models.user import User
 
+
 class Category(Base):
     __tablename__ = "categories"
 
@@ -29,10 +30,7 @@ class Category(Base):
     color: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
     parent_category_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("categories.id", ondelete="RESTRICT"),
-        nullable=True,
-        index=True
+        UUID(as_uuid=True), ForeignKey("categories.id", ondelete="RESTRICT"), nullable=True, index=True
     )
     system: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
     user_id: Mapped[Optional[uuid.UUID]] = mapped_column(

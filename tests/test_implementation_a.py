@@ -4,6 +4,7 @@ from fastapi import status
 from httpx import AsyncClient
 from .test_api import register_user
 
+
 @pytest.mark.asyncio
 async def test_patch_category_invalid_id(client: AsyncClient):
     """Verify that patching with a non-existent category_id returns 400."""
@@ -14,7 +15,7 @@ async def test_patch_category_invalid_id(client: AsyncClient):
         "user_id": user_id,
         "raw_text": "Rs.100 debited to Tea Stall.",
         "source": "notification",
-        "idempotency_key": "test_patch_1"
+        "idempotency_key": "test_patch_1",
     }
     headers = {"Authorization": f"Bearer {token}"}
     resp_tx = await client.post("/transactions", json=payload, headers=headers)
@@ -27,6 +28,7 @@ async def test_patch_category_invalid_id(client: AsyncClient):
     assert resp_patch.status_code == status.HTTP_400_BAD_REQUEST
     assert "Invalid category_id" in resp_patch.json()["detail"]
 
+
 @pytest.mark.asyncio
 async def test_patch_category_ownership_idor(client: AsyncClient):
     """Verify that User A cannot patch a transaction belonging to User B."""
@@ -38,19 +40,18 @@ async def test_patch_category_ownership_idor(client: AsyncClient):
     resp_tx = await client.post(
         "/transactions",
         json={"user_id": user_a, "raw_text": "Rs.100 debited to Amazon.", "source": "notification"},
-        headers=headers_a
+        headers=headers_a,
     )
     tx_id = resp_tx.json()["id"]
 
     # 2. User B tries to patch User A's transaction
     headers_b = {"Authorization": f"Bearer {token_b}"}
     resp_patch = await client.patch(
-        f"/transactions/{tx_id}/category",
-        json={"category_id": str(uuid.uuid4())},
-        headers=headers_b
+        f"/transactions/{tx_id}/category", json={"category_id": str(uuid.uuid4())}, headers=headers_b
     )
 
     assert resp_patch.status_code == status.HTTP_404_NOT_FOUND
+
 
 @pytest.mark.asyncio
 async def test_rate_limiting_patch_category(client: AsyncClient):
@@ -62,15 +63,15 @@ async def test_rate_limiting_patch_category(client: AsyncClient):
 
     # Just verify 404 for non-existent tx instead of 429 immediately
     resp = await client.patch(
-        f"/transactions/{uuid.uuid4()}/category",
-        json={"category_id": str(uuid.uuid4())},
-        headers=headers
+        f"/transactions/{uuid.uuid4()}/category", json={"category_id": str(uuid.uuid4())}, headers=headers
     )
     assert resp.status_code == 404
+
 
 from app.models.merchant import LearningEvent
 from app.models.category import Category
 from sqlalchemy import select
+
 
 @pytest.mark.asyncio
 async def test_patch_category_silent_bug_and_deduplication(client: AsyncClient, db_session):
@@ -91,7 +92,7 @@ async def test_patch_category_silent_bug_and_deduplication(client: AsyncClient, 
         "user_id": user_id,
         "raw_text": "Rs.100 debited to Swiggy.",
         "source": "notification",
-        "idempotency_key": "test_dedupe_1"
+        "idempotency_key": "test_dedupe_1",
     }
     resp_tx = await client.post("/transactions", json=tx_payload, headers=headers)
     assert resp_tx.status_code == status.HTTP_201_CREATED
@@ -121,9 +122,8 @@ async def test_patch_category_silent_bug_and_deduplication(client: AsyncClient, 
     # Verify a new LearningEvent is created and it stores the old vs new category correctly
     events_after_change = (await db_session.execute(stmt)).scalars().all()
     assert len(events_after_change) == initial_count + 1
-    
+
     # Sort events by timestamp or ID to get the latest one
     new_event = sorted(events_after_change, key=lambda e: e.timestamp)[-1]
     assert str(new_event.old_category_id) == cat_a_id
     assert str(new_event.new_category_id) == cat_b_id
-

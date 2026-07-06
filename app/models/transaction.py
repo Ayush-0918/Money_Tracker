@@ -71,7 +71,8 @@ class Transaction(Base, TimestampMixin):
     __table_args__ = (
         # Prevent duplicate transactions from Android retries.
         UniqueConstraint(
-            "user_id", "idempotency_key",
+            "user_id",
+            "idempotency_key",
             name="uq_transactions_user_idempotency",
         ),
         # Composite index for fast budget calculations per month
@@ -157,10 +158,7 @@ class Transaction(Base, TimestampMixin):
         nullable=False,
         default="INR",
         server_default="INR",
-        doc=(
-            "ISO 4217 currency code. Always 'INR' in Phase 1-2. "
-            "Multi-currency support planned for Phase 3."
-        ),
+        doc=("ISO 4217 currency code. Always 'INR' in Phase 1-2. " "Multi-currency support planned for Phase 3."),
     )
 
     # ── Relationships ─────────────────────────────────────────────────────────
@@ -168,7 +166,4 @@ class Transaction(Base, TimestampMixin):
     category_rel: Mapped[Optional["Category"]] = relationship("Category")
 
     def __repr__(self) -> str:
-        return (
-            f"<Transaction id={self.id} merchant={self.merchant!r} "
-            f"amount={self.amount} user_id={self.user_id}>"
-        )
+        return f"<Transaction id={self.id} merchant={self.merchant!r} " f"amount={self.amount} user_id={self.user_id}>"

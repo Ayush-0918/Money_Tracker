@@ -98,8 +98,7 @@ def is_otp_message(text: str) -> bool:
     match = _COMPILED_PATTERN.search(text)
     if match:
         logger.warning(
-            "otp_filter: SENSITIVE content detected — request rejected | "
-            "matched_pattern=%r | text_preview=%r",
+            "otp_filter: SENSITIVE content detected — request rejected | " "matched_pattern=%r | text_preview=%r",
             match.group(),
             text[:80],  # Only log a short preview — never the full OTP
         )

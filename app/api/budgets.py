@@ -23,6 +23,7 @@ logger = get_logger(__name__)
 
 router = APIRouter(prefix="/budgets", tags=["Budgets"])
 
+
 @router.post(
     "",
     response_model=BudgetResponse,
@@ -37,25 +38,21 @@ async def create_budget(
     db: AsyncSession = Depends(get_db),
 ):
     try:
-        new_budget = Budget(
-            user_id=current_user_id,
-            category_id=body.category_id,
-            monthly_limit=body.monthly_limit
-        )
+        new_budget = Budget(user_id=current_user_id, category_id=body.category_id, monthly_limit=body.monthly_limit)
         db.add(new_budget)
-        await db.flush() # flush to catch integrity errors
-        
+        await db.flush()  # flush to catch integrity errors
+
         # Trigger recalculation for this newly created budget
         await recalculate_user_budgets(db, current_user_id)
-        
+
         logger.info("budgets: created | user_id=%s | category_id=%s", current_user_id, body.category_id)
         return new_budget
     except IntegrityError:
         await db.rollback()
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="A budget for this category already exists for this user."
+            status_code=status.HTTP_409_CONFLICT, detail="A budget for this category already exists for this user."
         )
+
 
 @router.get(
     "",
@@ -71,6 +68,7 @@ async def list_budgets(
     result = await db.execute(stmt)
     return result.scalars().all()
 
+
 @router.get(
     "/summary",
     response_model=List[BudgetSummaryResponse],
@@ -82,6 +80,7 @@ async def get_budget_summary(
     db: AsyncSession = Depends(get_db),
 ):
     return await get_budget_summary_from_cache(db, current_user_id)
+
 
 @router.post(
     "/recalculate",
@@ -96,6 +95,7 @@ async def force_recalculate_budgets(
 ):
     await recalculate_user_budgets(db, current_user_id)
     return {"status": "ok", "message": "Budgets recalculated"}
+
 
 @router.patch(
     "/{budget_id}",
@@ -116,19 +116,20 @@ async def update_budget(
     b = result.scalar_one_or_none()
     if not b:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Budget not found")
-        
+
     # No-op check: category and limit are identical
     if b.category_id == body.category_id and b.monthly_limit == body.monthly_limit:
         logger.info("budgets: update is no-op | budget_id=%s", budget_id)
         return b
-        
+
     b.category_id = body.category_id
     b.monthly_limit = body.monthly_limit
-    
+
     # Needs recalculation if category changed
-    b.cached_updated_at = None 
-    
+    b.cached_updated_at = None
+
     return b
+
 
 @router.delete(
     "/{budget_id}",
@@ -147,6 +148,6 @@ async def delete_budget(
     b = result.scalar_one_or_none()
     if not b:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Budget not found")
-        
+
     await db.delete(b)
     return None

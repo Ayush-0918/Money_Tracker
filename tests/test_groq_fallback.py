@@ -6,6 +6,7 @@ from app.models.merchant import Merchant, MerchantAlias, MerchantRule, UserOverr
 import uuid
 from sqlalchemy import select
 
+
 class DummyHealthyProvider(AIProvider):
     def __init__(self, value=None, healthy=True):
         self.value = value
@@ -20,6 +21,7 @@ class DummyHealthyProvider(AIProvider):
 
     async def is_healthy(self):
         return self.healthy
+
 
 @pytest.mark.asyncio
 async def test_provider_manager_sequential_fallback():
@@ -36,6 +38,7 @@ async def test_provider_manager_sequential_fallback():
     assert p2.call_count == 1
     assert p3.call_count == 0
 
+
 @pytest.mark.asyncio
 async def test_provider_manager_unhealthy_skipped():
     p1 = DummyHealthyProvider(value='{"category": "Bills"}', healthy=False)
@@ -47,6 +50,7 @@ async def test_provider_manager_unhealthy_skipped():
     assert res == '{"category": "Shopping"}'
     assert p1.call_count == 0
     assert p2.call_count == 1
+
 
 @pytest.mark.asyncio
 async def test_rule_engine_provider_fallback(db_session):
@@ -62,10 +66,6 @@ async def test_rule_engine_provider_fallback(db_session):
 
     # Rule Engine Provider
     provider = RuleEngineProvider()
-    context = {
-        "db": db_session,
-        "merchant": "Zerodha",
-        "user_id": uuid.uuid4()
-    }
+    context = {"db": db_session, "merchant": "Zerodha", "user_id": uuid.uuid4()}
     res = await provider.get_completion("prompt", "sys", context)
     assert res == '{"category": "Investment"}'

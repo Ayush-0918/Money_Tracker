@@ -10,9 +10,10 @@ and receives WhatsApp reports. One phone number → one account.
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import String
+from sqlalchemy import String, JSON, DateTime, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -84,3 +85,19 @@ class User(Base, TimestampMixin):
 
     def __repr__(self) -> str:
         return f"<User id={self.id} phone={self.phone_number}>"
+
+
+class PredictionCache(Base, TimestampMixin):
+    """
+    Stores cached AI predictions for a user.
+    """
+
+    __tablename__ = "prediction_cache"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, doc="Owner of the prediction cache."
+    )
+    predictions: Mapped[dict] = mapped_column(JSON, nullable=False, doc="JSON blob of the cached predictions.")
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )

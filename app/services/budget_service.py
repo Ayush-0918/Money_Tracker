@@ -19,6 +19,7 @@ from app.schemas.budget import BudgetSummaryResponse, BudgetStatusEnum
 
 STALE_AFTER_MINUTES = 15
 
+
 def _status_for(pct: Optional[Decimal], spent: Decimal) -> BudgetStatusEnum:
     if pct is None:
         return BudgetStatusEnum.exceeded if spent > 0 else BudgetStatusEnum.safe
@@ -27,6 +28,7 @@ def _status_for(pct: Optional[Decimal], spent: Decimal) -> BudgetStatusEnum:
     if pct >= 80:
         return BudgetStatusEnum.warning
     return BudgetStatusEnum.safe
+
 
 async def get_budget_summary_from_cache(db: AsyncSession, user_id: UUID) -> List[BudgetSummaryResponse]:
     """
@@ -37,23 +39,20 @@ async def get_budget_summary_from_cache(db: AsyncSession, user_id: UUID) -> List
     stmt = select(Budget).where(Budget.user_id == user_id)
     result = await db.execute(stmt)
     budgets = result.scalars().all()
-    
+
     now = datetime.now(timezone.utc)
     results = []
 
     for b in budgets:
-        is_stale = (
-            b.cached_updated_at is None
-            or (now - b.cached_updated_at).total_seconds() > STALE_AFTER_MINUTES * 60
-        )
-        
+        is_stale = b.cached_updated_at is None or (now - b.cached_updated_at).total_seconds() > STALE_AFTER_MINUTES * 60
+
         # Transparent Backend Refresh
         if is_stale:
             start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
             spent_stmt = select(func.sum(Transaction.amount)).where(
                 Transaction.user_id == user_id,
                 Transaction.category_id == b.category_id,
-                Transaction.transaction_date >= start_of_month
+                Transaction.transaction_date >= start_of_month,
             )
             spent_result = await db.execute(spent_stmt)
             b.cached_spent = spent_result.scalar() or Decimal("0.00")
@@ -84,18 +83,19 @@ async def get_budget_summary_from_cache(db: AsyncSession, user_id: UUID) -> List
         )
     return results
 
+
 async def recalculate_user_budgets(db: AsyncSession, user_id: UUID) -> None:
     """
     Forcefully recalculates the spent amount for all budgets of a given user for the current month.
     """
     now = datetime.now(timezone.utc)
     start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    
+
     # Get all budgets for user
     stmt = select(Budget).where(Budget.user_id == user_id)
     result = await db.execute(stmt)
     budgets = result.scalars().all()
-    
+
     if not budgets:
         return
 
@@ -104,12 +104,12 @@ async def recalculate_user_budgets(db: AsyncSession, user_id: UUID) -> None:
         spent_stmt = select(func.sum(Transaction.amount)).where(
             Transaction.user_id == user_id,
             Transaction.category_id == b.category_id,
-            Transaction.transaction_date >= start_of_month
+            Transaction.transaction_date >= start_of_month,
         )
         spent_result = await db.execute(spent_stmt)
         spent = spent_result.scalar() or Decimal("0.00")
-        
+
         b.cached_spent = spent
         b.cached_updated_at = now
-        
+
     # Commit is handled by dependency

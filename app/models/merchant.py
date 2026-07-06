@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from app.models.transaction import Transaction
     from app.models.user import User
 
+
 class Merchant(Base):
     __tablename__ = "merchants"
 
@@ -40,10 +41,7 @@ class MerchantAlias(Base):
 
     alias: Mapped[str] = mapped_column(String, primary_key=True)
     merchant_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("merchants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True
+        UUID(as_uuid=True), ForeignKey("merchants.id", ondelete="CASCADE"), nullable=False, index=True
     )
 
     def __repr__(self) -> str:
@@ -54,9 +52,7 @@ class MerchantRule(Base):
     __tablename__ = "merchant_rules"
 
     merchant_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("merchants.id", ondelete="CASCADE"),
-        primary_key=True
+        UUID(as_uuid=True), ForeignKey("merchants.id", ondelete="CASCADE"), primary_key=True
     )
     category_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -73,14 +69,10 @@ class UserOverride(Base):
     __tablename__ = "user_overrides"
 
     user_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("users.id", ondelete="CASCADE"),
-        primary_key=True
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
     )
     merchant_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("merchants.id", ondelete="CASCADE"),
-        primary_key=True
+        UUID(as_uuid=True), ForeignKey("merchants.id", ondelete="CASCADE"), primary_key=True
     )
     category_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -103,10 +95,7 @@ class LearningEvent(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=new_uuid)
     transaction_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("transactions.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True
+        UUID(as_uuid=True), ForeignKey("transactions.id", ondelete="CASCADE"), nullable=False, index=True
     )
     merchant_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True),
@@ -128,7 +117,7 @@ class LearningEvent(Base):
         nullable=False,
         server_default=func.now(),
     )
-    feedback_source: Mapped[Optional[str]] = mapped_column(String, nullable=True) # e.g. MANUAL
+    feedback_source: Mapped[Optional[str]] = mapped_column(String, nullable=True)  # e.g. MANUAL
     processed: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
 
 

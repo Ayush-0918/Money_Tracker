@@ -2,10 +2,11 @@
 exclude =
     .git,
     __pycache__,
-    venv,
-    .venv,
     .pytest_cache,
-    build,
-    dist
+    .venv,
+    venv,
+    migrations,
+    alembic/versions
+
 max-line-length = 120
-max-complexity = 10
+extend-ignore = E203,W503

@@ -20,6 +20,7 @@ logger = get_logger(__name__)
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
+
 @router.get(
     "/summary",
     response_model=DashboardSummaryDto,
@@ -32,7 +33,7 @@ async def get_dashboard_summary(
     db: AsyncSession = Depends(get_db),
 ) -> DashboardSummaryDto:
     logger.info("dashboard: summary requested | user_id=%s", current_user_id)
-    
+
     # Run concurrent queries to reduce latency (Critical for Dashboard P99)
     monthly_task = get_monthly_report(db=db, user_id=current_user_id)
     subs_task = get_subscription_report(db=db, user_id=current_user_id)
@@ -49,10 +50,7 @@ async def get_dashboard_summary(
         {"merchant": t.merchant, "amount": t.amount_formatted, "category": t.category}
         for t in monthly.recent_transactions
     ]
-    budget_list = [
-        {"category": b.category_id, "limit": b.monthly_limit, "spent": b.spent}
-        for b in budgets
-    ]
+    budget_list = [{"category": b.category_id, "limit": b.monthly_limit, "spent": b.spent} for b in budgets]
 
     ai_insights_task = ai_service.get_spending_insights(transaction_list)
     saving_tips_task = ai_service.get_saving_tips({"budgets": budget_list})
@@ -71,5 +69,5 @@ async def get_dashboard_summary(
         weekly_activity=weekly,
         budgets=budgets,
         ai_insights=ai_insights,
-        saving_tips=saving_tips
+        saving_tips=saving_tips,
     )

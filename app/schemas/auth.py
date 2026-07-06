@@ -55,9 +55,7 @@ class RegisterRequest(BaseModel):
         """
         cleaned = re.sub(r"[\s\-()]", "", v)
         if not re.match(r"^\+?\d{7,15}$", cleaned):
-            raise ValueError(
-                "Invalid phone number format. Use E.164 format, e.g., +919876543210"
-            )
+            raise ValueError("Invalid phone number format. Use E.164 format, e.g., +919876543210")
         return v.strip()
 
     @field_validator("language_preference")

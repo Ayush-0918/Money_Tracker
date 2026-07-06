@@ -25,7 +25,7 @@ from slowapi.errors import RateLimitExceeded
 from sqlalchemy import text
 
 from app.utils.limiter import limiter
-from app.api import auth, reports, transactions, admin, dashboard, budgets, categories
+from app.api import auth, reports, transactions, admin, dashboard, budgets, categories, predictions
 from app.config import settings
 from app.database import engine
 from app.models import Base
@@ -50,10 +50,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """
     # ── Startup ───────────────────────────────────────────────────────────────
     configure_logging()
-    
+
     if settings.SENTRY_DSN:
         import sentry_sdk
         from sentry_sdk.integrations.fastapi import FastAPIIntegration
+
         sentry_sdk.init(
             dsn=settings.SENTRY_DSN,
             integrations=[FastAPIIntegration()],
@@ -92,7 +93,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
                 ("income", "income", "Income", "attach_money", "#9C27B0", 80),
                 ("loans/emi", "loans-emi", "Loans & EMI", "account_balance", "#795548", 90),
                 ("credit card payment", "credit-card-payment", "Credit Card Payment", "credit_card", "#607D8B", 100),
-                ("others", "others", "Others", "more_horiz", "#9E9E9E", 110)
+                ("others", "others", "Others", "more_horiz", "#9E9E9E", 110),
             ]
             for name, slug, display_name, icon, color, sort_order in categories_to_seed:
                 stmt = select(Category).where(Category.name == name)
@@ -105,7 +106,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
                         icon=icon,
                         color=color,
                         sort_order=sort_order,
-                        system=True
+                        system=True,
                     )
                     session.add(new_cat)
         logger.info("System categories seeded/verified")
@@ -160,6 +161,7 @@ def create_app() -> FastAPI:
     app.include_router(dashboard.router)
     app.include_router(budgets.router)
     app.include_router(categories.router)
+    app.include_router(predictions.router)
 
     # ── Health Check ──────────────────────────────────────────────────────────
     @app.get(
@@ -177,12 +179,8 @@ def create_app() -> FastAPI:
         except Exception as e:
             logger.error("Health check DB ping failed: %s", e)
             db_status = "failed"
-            
-        return {
-            "status": "ok", 
-            "database": db_status,
-            "version": "1.0.0"
-        }
+
+        return {"status": "ok", "database": db_status, "version": "1.0.0"}
 
     # ── Global Exception Handler ──────────────────────────────────────────────
     @app.exception_handler(Exception)
@@ -208,21 +206,25 @@ def create_app() -> FastAPI:
     # ── Request Validation Error Handler ──────────────────────────────────────
     from fastapi.exceptions import RequestValidationError
     from fastapi.encoders import jsonable_encoder
+
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
         logger.warning("Validation failed: %s", exc.errors())
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            content=jsonable_encoder({
-                "error": "VALIDATION_ERROR",
-                "message": "Invalid request payload or query parameters.",
-                "details": exc.errors()
-            })
+            content=jsonable_encoder(
+                {
+                    "error": "VALIDATION_ERROR",
+                    "message": "Invalid request payload or query parameters.",
+                    "details": exc.errors(),
+                }
+            ),
         )
 
     # ── Request ID Middleware ────────────────────────────────────────────────
     import uuid
     from app.utils.logging_config import request_id_ctx_var
+
     @app.middleware("http")
     async def add_request_id_middleware(request: Request, call_next):
         request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))

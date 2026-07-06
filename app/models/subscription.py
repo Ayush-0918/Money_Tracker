@@ -58,9 +58,7 @@ class Subscription(Base, TimestampMixin):
 
     __tablename__ = "subscriptions"
 
-    __table_args__ = (
-        UniqueConstraint("user_id", "merchant", name="uq_subscriptions_user_merchant"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "merchant", name="uq_subscriptions_user_merchant"),)
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -117,7 +115,4 @@ class Subscription(Base, TimestampMixin):
     user: Mapped["User"] = relationship("User", back_populates="subscriptions")
 
     def __repr__(self) -> str:
-        return (
-            f"<Subscription id={self.id} merchant={self.merchant!r} "
-            f"status={self.status} user_id={self.user_id}>"
-        )
+        return f"<Subscription id={self.id} merchant={self.merchant!r} " f"status={self.status} user_id={self.user_id}>"

@@ -37,6 +37,7 @@ from app.models import Base
 
 # ── Registration Helper ───────────────────────────────────────────────────────
 
+
 async def register_user(client: AsyncClient, phone: str = "+919876543210") -> tuple[str, str]:
     """
     Register a test user and return (access_token, user_id_str).
@@ -266,6 +267,20 @@ async def test_subscription_report_empty(client: AsyncClient):
     data = response.json()
     assert isinstance(data, list)
     assert data == []
+
+
+@pytest.mark.asyncio
+async def test_get_predictions(client: AsyncClient):
+    """Verify that the predictions endpoint returns 200 and valid data."""
+    token, user_id = await register_user(client)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    response = await client.get("/predictions", headers=headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert "expense_forecast" in data
+    assert "cash_flow_forecast" in data
+    assert "salary_prediction" in data
 
 
 # ── Health Check ──────────────────────────────────────────────────────────────

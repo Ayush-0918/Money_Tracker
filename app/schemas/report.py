@@ -17,6 +17,7 @@ from app.schemas.budget import BudgetSummaryResponse
 
 # ── Monthly Report ────────────────────────────────────────────────────────────
 
+
 class TransactionItemDto(BaseModel):
     id: str
     merchant: str
@@ -38,6 +39,7 @@ class MonthlyReportDto(BaseModel):
 
 # ── Subscription Report ───────────────────────────────────────────────────────
 
+
 class SubscriptionDto(BaseModel):
     id: str
     merchant: str
@@ -45,9 +47,11 @@ class SubscriptionDto(BaseModel):
     next_billing_date: str
     countdown_days: int
 
+
 class WeeklyActivityDto(BaseModel):
     average_per_day: float
     points: List[float]
+
 
 class DashboardSummaryDto(BaseModel):
     total_balance: str

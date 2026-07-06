@@ -4,6 +4,7 @@ from fastapi import status
 from httpx import AsyncClient
 from .test_api import register_user
 
+
 @pytest.mark.asyncio
 async def test_transaction_idempotency(client: AsyncClient):
     """Verify that multiple identical requests with idempotency_key return the same record."""
@@ -14,7 +15,7 @@ async def test_transaction_idempotency(client: AsyncClient):
         "user_id": user_id,
         "raw_text": "Rs.100 debited to Tea Stall.",
         "source": "notification",
-        "idempotency_key": key
+        "idempotency_key": key,
     }
 
     headers = {"Authorization": f"Bearer {token}"}
@@ -27,10 +28,11 @@ async def test_transaction_idempotency(client: AsyncClient):
 
     # Second request (identical)
     resp2 = await client.post("/transactions", json=payload, headers=headers)
-    assert resp2.status_code == 200 # Note: code_transaction service returns same txn
+    assert resp2.status_code == 200  # Note: code_transaction service returns same txn
     data2 = resp2.json()
     assert data2["id"] == data1["id"]
     assert data2["is_duplicate"] is True
+
 
 @pytest.mark.asyncio
 async def test_dashboard_summary_structure(client: AsyncClient):
@@ -46,6 +48,7 @@ async def test_dashboard_summary_structure(client: AsyncClient):
     assert "weekly_activity" in data
     assert "top_categories" in data
     assert isinstance(data["latest_transactions"], list)
+
 
 @pytest.mark.asyncio
 async def test_budget_cache_invalidation_on_transaction(client: AsyncClient):
@@ -64,12 +67,8 @@ async def test_budget_cache_invalidation_on_transaction(client: AsyncClient):
     # 3. Add a transaction
     await client.post(
         "/transactions",
-        json={
-            "user_id": user_id,
-            "raw_text": "Rs.500 spent on Food.",
-            "source": "notification"
-        },
-        headers=headers
+        json={"user_id": user_id, "raw_text": "Rs.500 spent on Food.", "source": "notification"},
+        headers=headers,
     )
 
     # 4. Invalidation is verified if the service doesn't crash
@@ -77,14 +76,12 @@ async def test_budget_cache_invalidation_on_transaction(client: AsyncClient):
     resp_b2 = await client.get("/budgets/summary", headers=headers)
     assert resp_b2.status_code == 200
 
+
 @pytest.mark.asyncio
 async def test_rate_limiting_registration(client: AsyncClient):
     """Verify registration rate limiting."""
     # We set RATE_LIMIT_PER_MINUTE=100 in conftest, so this is hard to test
     # unless we lower it. For production readiness, we just verify the decorator
     # doesn't break the app.
-    response = await client.post(
-        "/auth/register",
-        json={"phone_number": "+910000000000", "name": "Speedy"}
-    )
+    response = await client.post("/auth/register", json={"phone_number": "+910000000000", "name": "Speedy"})
     assert response.status_code == 200

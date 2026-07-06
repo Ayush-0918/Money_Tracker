@@ -45,6 +45,7 @@ class ParseError(Exception):
     The error message is user-facing (returned in the API response body)
     so keep it descriptive but free of internal implementation details.
     """
+
     pass
 
 
@@ -77,9 +78,7 @@ _AMOUNT_PATTERNS: Final[list[str]] = [
     r"(?:debited\s+with|amount\s+of|amount\s*:?)\s*([\d,]+(?:\.\d{1,2})?)",
 ]
 
-_COMPILED_AMOUNT_PATTERNS: Final[list[re.Pattern[str]]] = [
-    re.compile(p, re.IGNORECASE) for p in _AMOUNT_PATTERNS
-]
+_COMPILED_AMOUNT_PATTERNS: Final[list[re.Pattern[str]]] = [re.compile(p, re.IGNORECASE) for p in _AMOUNT_PATTERNS]
 
 # Merchant patterns — extract names following contextual keywords.
 # Merchant names: start with a capital letter, 2–40 chars, may contain spaces/&/-
@@ -94,9 +93,7 @@ _MERCHANT_PATTERNS: Final[list[str]] = [
     r"to\s+([A-Za-z][A-Za-z0-9\s&.\-]{1,39}?)(?:\s*@|\.|$)",
 ]
 
-_COMPILED_MERCHANT_PATTERNS: Final[list[re.Pattern[str]]] = [
-    re.compile(p, re.IGNORECASE) for p in _MERCHANT_PATTERNS
-]
+_COMPILED_MERCHANT_PATTERNS: Final[list[re.Pattern[str]]] = [re.compile(p, re.IGNORECASE) for p in _MERCHANT_PATTERNS]
 
 # Date patterns (optional — we fall back to now() if not found)
 _DATE_PATTERNS: Final[list[tuple[str, str]]] = [
@@ -124,6 +121,7 @@ class ParsedTransaction:
                           parse time if no date found in text.
         raw_amount_str:   The raw amount string before conversion (for logging).
     """
+
     amount: Decimal
     merchant: str
     transaction_date: datetime
@@ -210,20 +208,12 @@ def _extract_amount(text: str) -> tuple[Decimal, str]:
             try:
                 amount = Decimal(clean_str)
                 if amount <= 0:
-                    raise ParseError(
-                        f"Parsed amount '{clean_str}' is not a positive number."
-                    )
+                    raise ParseError(f"Parsed amount '{clean_str}' is not a positive number.")
                 return amount, raw_str
             except InvalidOperation as exc:
-                raise ParseError(
-                    f"Found amount text '{raw_str}' but could not convert to "
-                    f"a number: {exc}"
-                ) from exc
+                raise ParseError(f"Found amount text '{raw_str}' but could not convert to " f"a number: {exc}") from exc
 
-    raise ParseError(
-        "Could not find a transaction amount (e.g., Rs.500 or ₹1,234) "
-        "in the notification text."
-    )
+    raise ParseError("Could not find a transaction amount (e.g., Rs.500 or ₹1,234) " "in the notification text.")
 
 
 def _extract_merchant(text: str) -> str:
@@ -290,8 +280,5 @@ def _extract_date(text: str) -> datetime:
             except ValueError:
                 continue  # Try next pattern
 
-    logger.debug(
-        "parser: no date found in text — using current UTC time as fallback"
-    )
+    logger.debug("parser: no date found in text — using current UTC time as fallback")
     return datetime.now(tz=timezone.utc)
-

@@ -49,6 +49,7 @@ TestSessionLocal = async_sessionmaker(
     autoflush=False,
 )
 
+
 @pytest_asyncio.fixture(autouse=True)
 async def setup_test_db():
     """Create all tables before each test, drop them after."""
@@ -57,6 +58,7 @@ async def setup_test_db():
     yield
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
+
 
 async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
     """Replace the real DB session with the test SQLite session."""
@@ -70,8 +72,10 @@ async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
         finally:
             await session.close()
 
+
 # Apply dependency override
 app.dependency_overrides[get_db] = override_get_db
+
 
 @pytest_asyncio.fixture
 async def client() -> AsyncGenerator[AsyncClient, None]:
@@ -79,11 +83,13 @@ async def client() -> AsyncGenerator[AsyncClient, None]:
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac
 
+
 @pytest_asyncio.fixture
 async def db_session() -> AsyncGenerator[AsyncSession, None]:
     """Provide a raw SQLAlchemy session for database operations in tests."""
     async with TestSessionLocal() as session:
         yield session
+
 
 @pytest_asyncio.fixture
 def admin_headers() -> dict:

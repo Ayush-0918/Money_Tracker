@@ -174,6 +174,8 @@ curl http://localhost:8000/health
 |--------|------|------|-------------|
 | POST | `/auth/register` | ❌ | Register user, get JWT token |
 | POST | `/transactions` | ✅ JWT | Submit payment notification |
+| GET | `/predictions` | ✅ JWT | Get AI financial forecasts (PR-15) |
+| POST | `/predictions/refresh` | ✅ JWT | Force refresh AI forecasts |
 | GET | `/reports/monthly/{user_id}` | ✅ JWT | Current month spending report |
 | GET | `/reports/subscriptions/{user_id}` | ✅ JWT | Subscription health report |
 | GET | `/health` | ❌ | Liveness probe |

@@ -3,6 +3,7 @@ from typing import List, Optional
 from datetime import datetime
 import uuid
 
+
 class DuplicateTransactionSummary(BaseModel):
     id: uuid.UUID
     amount: float
@@ -10,10 +11,12 @@ class DuplicateTransactionSummary(BaseModel):
     transaction_date: datetime
     is_recurring: bool
 
+
 class DuplicateGroup(BaseModel):
     original: DuplicateTransactionSummary
     duplicates: List[DuplicateTransactionSummary]
     has_anomalous_recurring: bool = False
+
 
 class DuplicateReportResponse(BaseModel):
     user_id: str
@@ -21,8 +24,10 @@ class DuplicateReportResponse(BaseModel):
     total_duplicates: int
     groups: List[DuplicateGroup]
 
+
 class DuplicateDeleteRequest(BaseModel):
     transaction_ids: Optional[List[uuid.UUID]] = None
+
 
 class DuplicateDeleteResponse(BaseModel):
     deleted_count: int

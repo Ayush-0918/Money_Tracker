@@ -88,6 +88,7 @@ async def weekly_report(
 from app.schemas.report import CoachReportDto
 from app.services.report_service import get_coach_report
 
+
 @router.get(
     "/coach/{user_id}",
     response_model=CoachReportDto,

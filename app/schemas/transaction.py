@@ -112,15 +112,17 @@ class TransactionResponse(BaseModel):
 class PaginatedTransactionResponse(BaseModel):
     """
     Paginated list of transactions.
-    
+
     Provides standard pagination metadata so the Android app can implement
     infinite scrolling for the transaction history.
     """
+
     items: list[TransactionResponse]
     total: int = Field(description="Total number of transactions across all pages.")
     page: int = Field(description="Current page number (1-indexed).")
     size: int = Field(description="Number of items per page.")
     has_more: bool = Field(description="True if there is a next page.")
+
 
 class OTPRejectedResponse(BaseModel):
     """
@@ -145,13 +147,8 @@ class ParseFailedResponse(BaseModel):
 
     error: str = "PARSE_FAILED"
     message: str
-    hint: str = (
-        "The notification format may not be supported yet. "
-        "You can add this transaction manually."
-    )
+    hint: str = "The notification format may not be supported yet. " "You can add this transaction manually."
+
 
 class CategoryUpdateDto(BaseModel):
-    category_id: uuid.UUID = Field(
-        ...,
-        description="The new category_id (UUID) to assign to the transaction."
-    )
+    category_id: uuid.UUID = Field(..., description="The new category_id (UUID) to assign to the transaction.")

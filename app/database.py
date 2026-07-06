@@ -35,6 +35,7 @@ engine_kwargs = {
 
 if "sqlite" in settings.DATABASE_URL:
     from sqlalchemy.pool import StaticPool
+
     engine_kwargs["poolclass"] = StaticPool
     # SQLite in-memory databases need check_same_thread=False (handled by aiosqlite natively)
 else:

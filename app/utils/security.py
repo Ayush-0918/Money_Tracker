@@ -46,9 +46,7 @@ def create_access_token(user_id: uuid.UUID) -> str:
         A signed JWT string to be returned to the client and sent as
         `Authorization: Bearer <token>` in subsequent requests.
     """
-    expire = datetime.now(tz=timezone.utc) + timedelta(
-        minutes=settings.JWT_EXPIRE_MINUTES
-    )
+    expire = datetime.now(tz=timezone.utc) + timedelta(minutes=settings.JWT_EXPIRE_MINUTES)
     payload = {
         _SUBJECT_FIELD: str(user_id),
         _EXPIRY_FIELD: expire,

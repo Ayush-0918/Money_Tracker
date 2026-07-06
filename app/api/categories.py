@@ -16,6 +16,7 @@ from app.schemas.category import CategoryResponse
 
 router = APIRouter(prefix="/categories", tags=["Categories"])
 
+
 @router.get(
     "",
     response_model=List[CategoryResponse],
@@ -30,13 +31,15 @@ async def list_categories(
     Returns system categories first, then user categories.
     Alphabetically sorted inside each section.
     """
-    stmt = select(Category).where(
-        or_(Category.system == True, Category.user_id == current_user_id)
-    ).order_by(
-        Category.system.desc(), # True comes before False in DESC
-        Category.sort_order.asc(),
-        Category.display_name.asc()
+    stmt = (
+        select(Category)
+        .where(or_(Category.system == True, Category.user_id == current_user_id))
+        .order_by(
+            Category.system.desc(),  # True comes before False in DESC
+            Category.sort_order.asc(),
+            Category.display_name.asc(),
+        )
     )
-    
+
     result = await db.execute(stmt)
     return result.scalars().all()

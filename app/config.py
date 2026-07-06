@@ -66,9 +66,7 @@ class Settings(BaseSettings):
     )
 
     # ── Environment ───────────────────────────────────────────────────────────
-    ENVIRONMENT: Literal["development", "production"] = Field(
-        default="development"
-    )
+    ENVIRONMENT: Literal["development", "production"] = Field(default="development")
 
     # ── Admin Auth ────────────────────────────────────────────────────────────
     ADMIN_API_KEY: str = Field(
@@ -109,7 +107,7 @@ class Settings(BaseSettings):
             raise ValueError(
                 "JWT_SECRET_KEY is still set to the example placeholder. "
                 "Generate a real secret with: "
-                "python -c \"import secrets; print(secrets.token_hex(32))\""
+                'python -c "import secrets; print(secrets.token_hex(32))"'
             )
         return v
 

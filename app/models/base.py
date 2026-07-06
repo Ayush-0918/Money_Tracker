@@ -21,6 +21,7 @@ class Base(DeclarativeBase):
     All ORM model classes must inherit from this Base so that
     Alembic can discover them for auto-generated migrations.
     """
+
     pass
 
 

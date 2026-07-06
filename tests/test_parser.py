@@ -110,6 +110,7 @@ class TestDateExtraction:
 
     def test_date_ddmonyyyy_format(self):
         from zoneinfo import ZoneInfo
+
         """01-Jul-2024 format."""
         result = parse_transaction("Rs.499 debited to Netflix on 01-Jul-2024.")
         ist_date = result.transaction_date.astimezone(ZoneInfo("Asia/Kolkata"))
@@ -120,6 +121,7 @@ class TestDateExtraction:
     def test_date_ddmmyyyy_slash(self):
         """DD/MM/YYYY format."""
         from zoneinfo import ZoneInfo
+
         result = parse_transaction("₹999 paid to Amazon on 15/06/2024.")
         ist_date = result.transaction_date.astimezone(ZoneInfo("Asia/Kolkata"))
         assert ist_date.day == 15
@@ -128,6 +130,7 @@ class TestDateExtraction:
     def test_no_date_falls_back_to_now(self):
         """Missing date falls back to current time — should not raise error."""
         from datetime import datetime, timezone
+
         before = datetime.now(tz=timezone.utc)
         result = parse_transaction("Rs.200 paid to Ola.")
         after = datetime.now(tz=timezone.utc)
@@ -137,6 +140,7 @@ class TestDateExtraction:
     def test_date_is_timezone_aware(self):
         """Parsed dates must be timezone-aware (UTC)."""
         import datetime
+
         result = parse_transaction("Rs.100 paid to Swiggy.")
         assert result.transaction_date.tzinfo is not None
 

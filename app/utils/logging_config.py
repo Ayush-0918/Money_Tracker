@@ -19,6 +19,7 @@ from contextvars import ContextVar
 
 request_id_ctx_var: ContextVar[str] = ContextVar("request_id", default="-")
 
+
 class RequestIdFilter(logging.Filter):
     def filter(self, record):
         record.request_id = request_id_ctx_var.get() or "-"
@@ -41,9 +42,7 @@ def configure_logging() -> None:
 
     log_level = logging.DEBUG if settings.ENVIRONMENT == "development" else logging.INFO
 
-    log_format = (
-        "%(asctime)s | %(levelname)-8s | %(name)s | %(request_id)s | %(message)s"
-    )
+    log_format = "%(asctime)s | %(levelname)-8s | %(name)s | %(request_id)s | %(message)s"
     date_format = "%Y-%m-%d %H:%M:%S"
 
     root_logger = logging.getLogger()

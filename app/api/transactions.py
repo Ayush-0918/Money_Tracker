@@ -112,9 +112,7 @@ async def post_transaction(
         )
 
     # ── Verify user exists ────────────────────────────────────────────────────
-    user_result = await db.execute(
-        select(User).where(User.id == current_user_id)
-    )
+    user_result = await db.execute(select(User).where(User.id == current_user_id))
     if user_result.scalar_one_or_none() is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -130,9 +128,7 @@ async def post_transaction(
 
     except OTPDetectedError:
         # OTP/sensitive content: return 400, log warning (no text content logged)
-        logger.warning(
-            "transactions: OTP detected — rejecting | user_id=%s", current_user_id
-        )
+        logger.warning("transactions: OTP detected — rejecting | user_id=%s", current_user_id)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={
@@ -156,12 +152,11 @@ async def post_transaction(
             detail={
                 "error": "PARSE_FAILED",
                 "message": str(exc),
-                "hint": (
-                    "The notification format may not be supported yet. "
-                    "You can add this transaction manually."
-                ),
+                "hint": ("The notification format may not be supported yet. " "You can add this transaction manually."),
             },
         )
+
+
 @router.get(
     "",
     response_model=PaginatedTransactionResponse,
@@ -225,13 +220,7 @@ async def list_transactions(
         order_col = Transaction.transaction_date.desc()
 
     # Query items
-    items_stmt = (
-        select(Transaction)
-        .where(*conditions)
-        .order_by(order_col)
-        .offset(offset)
-        .limit(size)
-    )
+    items_stmt = select(Transaction).where(*conditions).order_by(order_col).offset(offset).limit(size)
     result = await db.execute(items_stmt)
     transactions = result.scalars().all()
 
@@ -242,6 +231,7 @@ async def list_transactions(
         size=size,
         has_more=(offset + size) < total,
     )
+
 
 @router.patch(
     "/{tx_id}/category",
@@ -258,30 +248,26 @@ async def update_transaction_category(
     db: AsyncSession = Depends(get_db),
 ):
     # 1. Ownership Check (Transaction)
-    stmt = select(Transaction).where(
-        Transaction.id == tx_id,
-        Transaction.user_id == current_user_id
-    )
+    stmt = select(Transaction).where(Transaction.id == tx_id, Transaction.user_id == current_user_id)
     result = await db.execute(stmt)
     tx = result.scalar_one_or_none()
 
     if not tx:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Transaction not found or you do not have permission to modify it."
+            detail="Transaction not found or you do not have permission to modify it.",
         )
 
     # 2. Validation Check (Category existence and accessibility)
     # User can only assign a system category or one they created themselves.
     cat_stmt = select(Category).where(
-        Category.id == body.category_id,
-        or_(Category.system == True, Category.user_id == current_user_id)
+        Category.id == body.category_id, or_(Category.system == True, Category.user_id == current_user_id)
     )
     cat_result = await db.execute(cat_stmt)
     if cat_result.scalar_one_or_none() is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid category_id. Category does not exist or access is denied."
+            detail="Invalid category_id. Category does not exist or access is denied.",
         )
 
     # ── Logic ─────────────────────────────────────────────────────────────
@@ -294,14 +280,16 @@ async def update_transaction_category(
 
     # Invalidate old budget cache if there is one
     if previous_category_id:
-        old_budget_stmt = select(Budget).where(Budget.user_id == current_user_id, Budget.category_id == previous_category_id)
+        old_budget_stmt = select(Budget).where(
+            Budget.user_id == current_user_id, Budget.category_id == previous_category_id
+        )
         old_budget = (await db.execute(old_budget_stmt)).scalar_one_or_none()
         if old_budget:
             old_budget.cached_updated_at = None
 
     tx.category_id = body.category_id
-    tx.category = None # Nullify free-text to prevent inconsistency
-    
+    tx.category = None  # Nullify free-text to prevent inconsistency
+
     # Invalidate new budget cache
     new_budget_stmt = select(Budget).where(Budget.user_id == current_user_id, Budget.category_id == body.category_id)
     new_budget = (await db.execute(new_budget_stmt)).scalar_one_or_none()
@@ -311,18 +299,18 @@ async def update_transaction_category(
     # Queue AI Learning Event (Phase 1)
     alias_stmt = select(MerchantAlias).where(MerchantAlias.alias == tx.merchant.lower().strip())
     alias = (await db.execute(alias_stmt)).scalar_one_or_none()
-    
+
     learning_event = LearningEvent(
         transaction_id=tx.id,
         merchant_id=alias.merchant_id if alias else None,
         old_category_id=previous_category_id,
         new_category_id=body.category_id,
-        feedback_source="MANUAL"
+        feedback_source="MANUAL",
     )
     db.add(learning_event)
-    
-    # SQLAlchemy will automatically commit this change because of the FastAPI Dependency 
+
+    # SQLAlchemy will automatically commit this change because of the FastAPI Dependency
     # (if the get_db yield block runs successfully)
-    
+
     logger.info("transactions: category updated | tx_id=%s | category_id=%s", tx_id, body.category_id)
     return None

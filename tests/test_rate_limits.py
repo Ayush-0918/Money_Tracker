@@ -3,6 +3,7 @@ from httpx import AsyncClient
 from fastapi import status
 from .test_api import register_user
 
+
 @pytest.mark.asyncio
 async def test_budget_recalculate_rate_limiting(client: AsyncClient):
     """Verify that calling the budget recalculate route repeatedly triggers a 429."""

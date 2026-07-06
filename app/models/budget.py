@@ -19,11 +19,10 @@ if TYPE_CHECKING:
     from app.models.user import User
     from app.models.category import Category
 
+
 class Budget(Base, TimestampMixin):
     __tablename__ = "budgets"
-    __table_args__ = (
-        UniqueConstraint("user_id", "category_id", name="uq_budget_user_category_id"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "category_id", name="uq_budget_user_category_id"),)
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=new_uuid)
     user_id: Mapped[uuid.UUID] = mapped_column(
