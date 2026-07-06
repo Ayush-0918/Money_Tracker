@@ -27,3 +27,8 @@ aiosqlite==0.20.0           # In-memory SQLite for tests (async)
 
 # ── Utilities ──────────────────────────────────────────────────────────────────
 python-dotenv==1.0.1        # Load .env (also handled by pydantic-settings)
+
+# ── DevOps & Monitoring ────────────────────────────────────────────────────────
+sentry-sdk[fastapi]==2.1.1
+redis==5.0.4
+celery==5.3.6
