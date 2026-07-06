@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -15,6 +16,8 @@ import com.example.moneytracker.ui.dashboard.DashboardViewModel
 import com.example.moneytracker.ui.dashboard.DashboardViewModelFactory
 import com.example.moneytracker.ui.activity.ActivityViewModel
 import com.example.moneytracker.ui.activity.ActivityViewModelFactory
+import com.example.moneytracker.ui.analytics.AnalyticsViewModel
+import com.example.moneytracker.ui.analytics.AnalyticsViewModelFactory
 import com.example.moneytracker.ui.budget.BudgetViewModel
 import com.example.moneytracker.ui.budget.BudgetViewModelFactory
 import com.example.moneytracker.ui.onboarding.LanguageSelectionScreen
@@ -44,6 +47,18 @@ class MainActivity : ComponentActivity() {
         setContent {
             MoneyTrackerTheme {
                 val navController = rememberNavController()
+
+                LaunchedEffect(Unit) {
+                    ServiceLocator.authExpiredEvent.collect { expired ->
+                        if (expired) {
+                            android.util.Log.e("MainActivity", "Session expired, redirecting to login")
+                            navController.navigate("language_selection") {
+                                popUpTo("dashboard") { inclusive = true }
+                            }
+                        }
+                    }
+                }
+                
                 val startDestination = if (securePrefs.getUserId().isNullOrEmpty()) "language_selection" else "dashboard"
 
                 NavHost(navController = navController, startDestination = startDestination) {
@@ -138,10 +153,14 @@ class MainActivity : ComponentActivity() {
                         val budgetFactory = BudgetViewModelFactory(budgetRepository, categoryRepository)
                         val budgetViewModel: BudgetViewModel = viewModel(factory = budgetFactory)
                         
+                        val analyticsFactory = AnalyticsViewModelFactory(repository, userId)
+                        val analyticsViewModel: AnalyticsViewModel = viewModel(factory = analyticsFactory)
+                        
                         DashboardScreen(
                             viewModel = dashboardViewModel, 
                             activityViewModel = activityViewModel,
-                            budgetViewModel = budgetViewModel
+                            budgetViewModel = budgetViewModel,
+                            analyticsViewModel = analyticsViewModel
                         )
                     }
                 }

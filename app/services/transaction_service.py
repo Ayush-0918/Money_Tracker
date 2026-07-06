@@ -17,16 +17,18 @@ to appropriate HTTP responses.
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.transaction import Transaction
 from app.models.merchant import Merchant, MerchantAlias, MerchantRule, UserOverride
 from app.models.budget import Budget
+from app.models.category import Category
 from app.schemas.transaction import TransactionCreate, TransactionResponse
 from app.utils.logging_config import get_logger
 from app.utils.otp_filter import is_otp_message
 from app.utils.parser import ParseError, parse_transaction
+from app.services.ai_service import ai_service
 from app.services.subscription_service import check_and_update_recurring
 
 logger = get_logger(__name__)
@@ -98,46 +100,59 @@ async def create_transaction(
     # ParseError propagates up to the route handler → HTTP 422
     parsed = parse_transaction(payload.raw_text)
 
-    # ── Step 2.5: AI Categorization Phase 1 ───────────────────────────────────
-    # We resolve the raw merchant string into a canonical UUID and apply rules.
-    final_category_id = None
-    canonical_merchant_id = None
+    # ── Step 2.5: AI Categorization ───────────────────────────────────────────
+    # Primary: AI Inference (GitHub Models)
+    # Fallback: Rules-based system
     
-    # 1. Look up alias
-    alias_stmt = select(MerchantAlias).where(MerchantAlias.alias == parsed.merchant.lower().strip())
-    alias_result = await db.execute(alias_stmt)
-    alias = alias_result.scalar_one_or_none()
+    final_category_id = None
+    ai_category_name = await ai_service.categorize_transaction(
+        merchant=parsed.merchant,
+        amount=float(parsed.amount),
+        raw_text=payload.raw_text,
+        db=db,
+        user_id=payload.user_id
+    )
 
-    if alias:
-        canonical_merchant_id = alias.merchant_id
-        
-        # 2. Check User Override
-        override_stmt = select(UserOverride).where(
-            UserOverride.user_id == payload.user_id,
-            UserOverride.merchant_id == canonical_merchant_id,
-            UserOverride.correction_count >= 2
-        )
-        override_result = await db.execute(override_stmt)
-        override = override_result.scalar_one_or_none()
+    if ai_category_name:
+        # Resolve AI category name to UUID
+        cat_stmt = select(Category).where(func.lower(Category.name) == ai_category_name.lower())
+        cat_res = await db.execute(cat_stmt)
+        cat = cat_res.scalar_one_or_none()
+        if cat:
+            final_category_id = cat.id
+            logger.info(f"Categorized by AI: {ai_category_name}")
 
-        if override:
-            final_category_id = override.category_id
-            logger.info("Categorized by UserOverride (id=%s)", canonical_merchant_id)
-        else:
-            # 3. Check Global Rule
-            rule_stmt = select(MerchantRule).where(
-                MerchantRule.merchant_id == canonical_merchant_id
+    if not final_category_id:
+        # Rule-based Fallback
+        alias_stmt = select(MerchantAlias).where(MerchantAlias.alias == parsed.merchant.lower().strip())
+        alias_result = await db.execute(alias_stmt)
+        alias = alias_result.scalar_one_or_none()
+
+        if alias:
+            canonical_merchant_id = alias.merchant_id
+
+            # Check User Override
+            override_stmt = select(UserOverride).where(
+                UserOverride.user_id == payload.user_id,
+                UserOverride.merchant_id == canonical_merchant_id,
+                UserOverride.correction_count >= 2
             )
-            rule_result = await db.execute(rule_stmt)
-            rule = rule_result.scalar_one_or_none()
-            if rule:
-                final_category_id = rule.category_id
-                logger.info("Categorized by MerchantRule (id=%s)", canonical_merchant_id)
-    else:
-        # Create unverified merchant
-        logger.info("Unverified merchant detected: %s", parsed.merchant)
-        # Note: We do not create the merchant automatically right now to prevent DB bloat 
-        # from garbage parsing. The async learning queue will handle bulk unverified ingestion.
+            override_res = await db.execute(override_stmt)
+            override = override_res.scalar_one_or_none()
+
+            if override:
+                final_category_id = override.category_id
+                logger.info("Categorized by UserOverride fallback")
+            else:
+                # Check Global Rule
+                rule_stmt = select(MerchantRule).where(
+                    MerchantRule.merchant_id == canonical_merchant_id
+                )
+                rule_res = await db.execute(rule_stmt)
+                rule = rule_res.scalar_one_or_none()
+                if rule:
+                    final_category_id = rule.category_id
+                    logger.info("Categorized by MerchantRule fallback")
 
     # ── Step 3: Persist to Database ───────────────────────────────────────────
     transaction = Transaction(

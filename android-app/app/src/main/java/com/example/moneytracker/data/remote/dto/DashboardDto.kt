@@ -14,7 +14,10 @@ data class DashboardSummaryDto(
     val latest_transactions: List<TransactionItemDto>,
     val top_categories: Map<String, Float>,
     val upcoming_subscriptions: List<SubscriptionDto>,
-    val weekly_activity: WeeklyActivityDto
+    val weekly_activity: WeeklyActivityDto,
+    val budgets: List<BudgetSummaryResponse> = emptyList(),
+    val ai_insights: String? = null,
+    val saving_tips: String? = null
 )
 
 data class TransactionItemDto(
