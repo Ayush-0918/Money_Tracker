@@ -17,6 +17,7 @@ import com.example.moneytracker.data.remote.dto.CategoryResponse
 import com.example.moneytracker.data.remote.dto.BudgetSummaryResponse
 import com.example.moneytracker.data.remote.dto.BudgetCreateRequest
 import com.example.moneytracker.data.remote.dto.CategoryUpdateDto
+import com.example.moneytracker.data.remote.dto.AIPredictionResponseDto
 
 interface ApiService {
     @POST("auth/register")
@@ -75,4 +76,10 @@ interface ApiService {
         @Query("max_amount") maxAmount: Float? = null,
         @Query("sort") sort: String = "date_desc"
     ): Response<PaginatedTransactionResponse>
+
+    @GET("predictions")
+    suspend fun getPredictions(): Response<AIPredictionResponseDto>
+
+    @POST("predictions/refresh")
+    suspend fun refreshPredictions(): Response<AIPredictionResponseDto>
 }

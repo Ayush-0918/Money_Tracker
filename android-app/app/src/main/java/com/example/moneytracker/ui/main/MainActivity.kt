@@ -18,6 +18,9 @@ import com.example.moneytracker.ui.activity.ActivityViewModel
 import com.example.moneytracker.ui.activity.ActivityViewModelFactory
 import com.example.moneytracker.ui.analytics.AnalyticsViewModel
 import com.example.moneytracker.ui.analytics.AnalyticsViewModelFactory
+import com.example.moneytracker.ui.analytics.PredictionViewModel
+import com.example.moneytracker.ui.analytics.PredictionViewModelFactory
+import com.example.moneytracker.ui.analytics.PredictionScreen
 import com.example.moneytracker.ui.budget.BudgetViewModel
 import com.example.moneytracker.ui.budget.BudgetViewModelFactory
 import com.example.moneytracker.ui.onboarding.LanguageSelectionScreen
@@ -160,7 +163,17 @@ class MainActivity : ComponentActivity() {
                             viewModel = dashboardViewModel, 
                             activityViewModel = activityViewModel,
                             budgetViewModel = budgetViewModel,
-                            analyticsViewModel = analyticsViewModel
+                            analyticsViewModel = analyticsViewModel,
+                            onPredictionsClick = { navController.navigate("predictions") }
+                        )
+                    }
+                    composable("predictions") {
+                        val predictionRepository = ServiceLocator.providePredictionRepository(applicationContext)
+                        val factory = PredictionViewModelFactory(predictionRepository)
+                        val predictionViewModel: PredictionViewModel = viewModel(factory = factory)
+                        PredictionScreen(
+                            viewModel = predictionViewModel,
+                            onNavigateBack = { navController.popBackStack() }
                         )
                     }
                 }

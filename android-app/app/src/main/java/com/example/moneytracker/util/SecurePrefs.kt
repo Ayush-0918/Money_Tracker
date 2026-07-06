@@ -109,4 +109,18 @@ class SecurePrefs(context: Context) {
             null
         }
     }
+
+    fun savePredictions(predictions: com.example.moneytracker.data.remote.dto.AIPredictionResponseDto) {
+        val json = com.google.gson.Gson().toJson(predictions)
+        prefs.edit().putString("cache_predictions", json).apply()
+    }
+
+    fun getPredictions(): com.example.moneytracker.data.remote.dto.AIPredictionResponseDto? {
+        val json = prefs.getString("cache_predictions", null) ?: return null
+        return try {
+            com.google.gson.Gson().fromJson(json, com.example.moneytracker.data.remote.dto.AIPredictionResponseDto::class.java)
+        } catch (e: Exception) {
+            null
+        }
+    }
 }

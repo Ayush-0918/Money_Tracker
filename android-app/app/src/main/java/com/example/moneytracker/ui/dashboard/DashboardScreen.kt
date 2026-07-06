@@ -46,7 +46,8 @@ fun DashboardScreen(
     viewModel: DashboardViewModel,
     activityViewModel: ActivityViewModel,
     budgetViewModel: BudgetViewModel? = null,
-    analyticsViewModel: AnalyticsViewModel? = null
+    analyticsViewModel: AnalyticsViewModel? = null,
+    onPredictionsClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val selectedTxId by viewModel.selectedTransactionForCategorize.collectAsState()
@@ -60,7 +61,8 @@ fun DashboardScreen(
         onCategorizeClicked = { txId -> viewModel.onCategorizeClicked(txId) },
         activityViewModel = activityViewModel,
         budgetViewModel = budgetViewModel,
-        analyticsViewModel = analyticsViewModel
+        analyticsViewModel = analyticsViewModel,
+        onPredictionsClick = onPredictionsClick
     )
 }
 
@@ -75,7 +77,8 @@ fun DashboardScreenContent(
     onCategorizeClicked: (String) -> Unit,
     activityViewModel: ActivityViewModel? = null,
     budgetViewModel: BudgetViewModel? = null,
-    analyticsViewModel: AnalyticsViewModel? = null
+    analyticsViewModel: AnalyticsViewModel? = null,
+    onPredictionsClick: () -> Unit
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -134,7 +137,8 @@ fun DashboardScreenContent(
                                 summary = uiState.summary,
                                 onCategorize = onCategorizeClicked,
                                 onAddClick = { scope.launch { snackbarHostState.showSnackbar("Add Balance flow coming soon") } },
-                                onSeeAllClick = { scope.launch { snackbarHostState.showSnackbar("Navigating to all transactions...") } }
+                                onSeeAllClick = { scope.launch { snackbarHostState.showSnackbar("Navigating to all transactions...") } },
+                                onPredictionsClick = onPredictionsClick
                             )
                             1 -> Box(modifier = Modifier.fillMaxSize()) { 
                                 if (activityViewModel != null) {
@@ -210,7 +214,8 @@ fun DashboardContent(
     summary: DashboardSummaryDto,
     onCategorize: (String) -> Unit,
     onAddClick: () -> Unit,
-    onSeeAllClick: () -> Unit
+    onSeeAllClick: () -> Unit,
+    onPredictionsClick: () -> Unit
 ) {
     val spendValue = parseCurrency(summary.monthly_expense)
     val balanceValue = parseCurrency(summary.total_balance)
@@ -247,6 +252,12 @@ fun DashboardContent(
                 AICoachCard(
                     insight = summary.ai_insights ?: "Welcome! I'm your AI finance coach. Spend money to get insights."
                 )
+            }
+        }
+
+        item {
+            CardEntrance(delay = 250) {
+                AIPredictionsCard(onClick = onPredictionsClick)
             }
         }
 
@@ -815,6 +826,64 @@ fun CardEntranceStatsPreview() {
                     savings = 18000f
                 )
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AIPredictionsCard(onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+            .border(1.dp, GlassBorder, RoundedCornerShape(24.dp)),
+        colors = CardDefaults.cardColors(containerColor = FintechSurfaceBright)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(FintechBlue.copy(alpha = 0.15f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.TrendingUp,
+                        contentDescription = null,
+                        tint = FintechBlue,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Column {
+                    Text(
+                        text = "AI Financial Projections",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = Color.White
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Forecast your cash flow & spend risks",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = FintechSecondary
+                    )
+                }
+            }
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = FintechSecondary,
+                modifier = Modifier.size(24.dp)
+            )
         }
     }
 }

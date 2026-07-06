@@ -13,6 +13,8 @@ import com.example.moneytracker.domain.repository.BudgetRepository
 import com.example.moneytracker.domain.repository.CategoryRepository
 import com.example.moneytracker.data.repository.BudgetRepositoryImpl
 import com.example.moneytracker.data.repository.CategoryRepositoryImpl
+import com.example.moneytracker.domain.repository.PredictionRepository
+import com.example.moneytracker.data.repository.PredictionRepositoryImpl
 import com.example.moneytracker.util.SecurePrefs
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -31,6 +33,7 @@ object ServiceLocator {
     private var repository: TransactionRepository? = null
     private var budgetRepository: BudgetRepository? = null
     private var categoryRepository: CategoryRepository? = null
+    private var predictionRepository: PredictionRepository? = null
 
     private fun provideDatabase(context: Context): AppDatabase {
         return database ?: synchronized(this) {
@@ -87,6 +90,17 @@ object ServiceLocator {
         return categoryRepository ?: synchronized(this) {
             val instance = CategoryRepositoryImpl(provideApiService(context))
             categoryRepository = instance
+            instance
+        }
+    }
+
+    fun providePredictionRepository(context: Context): PredictionRepository {
+        return predictionRepository ?: synchronized(this) {
+            val instance = PredictionRepositoryImpl(
+                api = provideApiService(context),
+                securePrefs = provideSecurePrefs(context)
+            )
+            predictionRepository = instance
             instance
         }
     }
