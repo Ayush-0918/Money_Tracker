@@ -123,4 +123,23 @@ class SecurePrefs(context: Context) {
             null
         }
     }
+
+    // ── AI Weekly Financial Report cache ──────────────────────────────────────
+
+    fun saveWeeklyFinancialReport(report: com.example.moneytracker.data.remote.dto.WeeklyReportResponseDto) {
+        val json = com.google.gson.Gson().toJson(report)
+        prefs.edit().putString("cache_weekly_financial_report", json).apply()
+    }
+
+    fun getWeeklyFinancialReport(): com.example.moneytracker.data.remote.dto.WeeklyReportResponseDto? {
+        val json = prefs.getString("cache_weekly_financial_report", null) ?: return null
+        return try {
+            com.google.gson.Gson().fromJson(
+                json,
+                com.example.moneytracker.data.remote.dto.WeeklyReportResponseDto::class.java
+            )
+        } catch (e: Exception) {
+            null
+        }
+    }
 }

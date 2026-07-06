@@ -21,6 +21,8 @@ import com.example.moneytracker.ui.analytics.AnalyticsViewModelFactory
 import com.example.moneytracker.ui.analytics.PredictionViewModel
 import com.example.moneytracker.ui.analytics.PredictionViewModelFactory
 import com.example.moneytracker.ui.analytics.PredictionScreen
+import com.example.moneytracker.ui.reports.WeeklyReportViewModel
+import com.example.moneytracker.ui.reports.WeeklyReportScreen
 import com.example.moneytracker.ui.budget.BudgetViewModel
 import com.example.moneytracker.ui.budget.BudgetViewModelFactory
 import com.example.moneytracker.ui.onboarding.LanguageSelectionScreen
@@ -164,7 +166,8 @@ class MainActivity : ComponentActivity() {
                             activityViewModel = activityViewModel,
                             budgetViewModel = budgetViewModel,
                             analyticsViewModel = analyticsViewModel,
-                            onPredictionsClick = { navController.navigate("predictions") }
+                            onPredictionsClick = { navController.navigate("predictions") },
+                            onWeeklyReportClick = { navController.navigate("weekly_report") }
                         )
                     }
                     composable("predictions") {
@@ -174,6 +177,16 @@ class MainActivity : ComponentActivity() {
                         PredictionScreen(
                             viewModel = predictionViewModel,
                             onNavigateBack = { navController.popBackStack() }
+                        )
+                    }
+                    composable("weekly_report") {
+                        val userId = ServiceLocator.provideApiService(applicationContext)
+                            .let { com.example.moneytracker.util.SecurePrefs(applicationContext).getUserId() ?: "" }
+                        val weeklyReportRepository = ServiceLocator.provideWeeklyReportRepository(applicationContext)
+                        val weeklyReportViewModel = WeeklyReportViewModel(weeklyReportRepository, userId)
+                        WeeklyReportScreen(
+                            viewModel = weeklyReportViewModel,
+                            onBack = { navController.popBackStack() }
                         )
                     }
                 }

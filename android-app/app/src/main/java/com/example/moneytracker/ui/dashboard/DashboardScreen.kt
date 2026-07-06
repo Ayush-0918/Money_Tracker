@@ -47,7 +47,8 @@ fun DashboardScreen(
     activityViewModel: ActivityViewModel,
     budgetViewModel: BudgetViewModel? = null,
     analyticsViewModel: AnalyticsViewModel? = null,
-    onPredictionsClick: () -> Unit
+    onPredictionsClick: () -> Unit,
+    onWeeklyReportClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val selectedTxId by viewModel.selectedTransactionForCategorize.collectAsState()
@@ -62,7 +63,8 @@ fun DashboardScreen(
         activityViewModel = activityViewModel,
         budgetViewModel = budgetViewModel,
         analyticsViewModel = analyticsViewModel,
-        onPredictionsClick = onPredictionsClick
+        onPredictionsClick = onPredictionsClick,
+        onWeeklyReportClick = onWeeklyReportClick
     )
 }
 
@@ -78,7 +80,8 @@ fun DashboardScreenContent(
     activityViewModel: ActivityViewModel? = null,
     budgetViewModel: BudgetViewModel? = null,
     analyticsViewModel: AnalyticsViewModel? = null,
-    onPredictionsClick: () -> Unit
+    onPredictionsClick: () -> Unit,
+    onWeeklyReportClick: () -> Unit
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -138,7 +141,8 @@ fun DashboardScreenContent(
                                 onCategorize = onCategorizeClicked,
                                 onAddClick = { scope.launch { snackbarHostState.showSnackbar("Add Balance flow coming soon") } },
                                 onSeeAllClick = { scope.launch { snackbarHostState.showSnackbar("Navigating to all transactions...") } },
-                                onPredictionsClick = onPredictionsClick
+                                onPredictionsClick = onPredictionsClick,
+                                onWeeklyReportClick = onWeeklyReportClick
                             )
                             1 -> Box(modifier = Modifier.fillMaxSize()) { 
                                 if (activityViewModel != null) {
@@ -215,7 +219,8 @@ fun DashboardContent(
     onCategorize: (String) -> Unit,
     onAddClick: () -> Unit,
     onSeeAllClick: () -> Unit,
-    onPredictionsClick: () -> Unit
+    onPredictionsClick: () -> Unit,
+    onWeeklyReportClick: () -> Unit
 ) {
     val spendValue = parseCurrency(summary.monthly_expense)
     val balanceValue = parseCurrency(summary.total_balance)
@@ -258,6 +263,12 @@ fun DashboardContent(
         item {
             CardEntrance(delay = 250) {
                 AIPredictionsCard(onClick = onPredictionsClick)
+            }
+        }
+
+        item {
+            CardEntrance(delay = 280) {
+                WeeklyReportCard(onClick = onWeeklyReportClick)
             }
         }
 
@@ -873,6 +884,63 @@ fun AIPredictionsCard(onClick: () -> Unit) {
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = "Forecast your cash flow & spend risks",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = FintechSecondary
+                    )
+                }
+            }
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = FintechSecondary,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun WeeklyReportCard(onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+            .border(1.dp, GlassBorder, RoundedCornerShape(24.dp)),
+        colors = CardDefaults.cardColors(containerColor = FintechSurfaceBright)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFF4CAF7D).copy(alpha = 0.15f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.BarChart,
+                        contentDescription = null,
+                        tint = Color(0xFF4CAF7D),
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Column {
+                    Text(
+                        text = "AI Weekly Report",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = Color.White
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Your 7-day financial summary & insights",
                         style = MaterialTheme.typography.bodyMedium,
                         color = FintechSecondary
                     )

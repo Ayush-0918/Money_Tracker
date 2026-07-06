@@ -567,6 +567,45 @@ class AIService:
                 pass
         return None
 
+    async def get_weekly_narrative(
+        self, summary_data: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Generates a 3-5 sentence AI-narrated weekly financial summary and 2-3 actionable tips.
+
+        Args:
+            summary_data: dict with keys: total_spend, prior_week_spend, spend_change_pct,
+                          top_categories, top_merchants, exceeded_budget_count,
+                          active_subscriptions, financial_health_score.
+
+        Returns:
+            dict with keys: narrative (str), tips (list[str])
+            or None if all providers fail.
+        """
+        if not self.enabled:
+            return None
+
+        system_msg = (
+            "You are a friendly and concise personal finance advisor for Indian users. "
+            "Analyze the user's weekly spending data and write a natural-language summary "
+            "of exactly 3-5 sentences, then provide exactly 2-3 short, actionable money-saving tips. "
+            "Use Indian Rupee (₹) where relevant. Be encouraging but honest."
+        )
+        prompt = (
+            f"Weekly financial data: {json.dumps(summary_data)}. "
+            'Return JSON: {"narrative": "3-5 sentences here", "tips": ["tip1", "tip2", "tip3"]}'
+        )
+
+        result_json = await self.provider.get_completion(prompt, system_msg)
+        if result_json:
+            try:
+                data = json.loads(result_json)
+                if "narrative" in data and "tips" in data:
+                    return data
+            except (json.JSONDecodeError, KeyError):
+                pass
+        return None
+
 
 # Dependency Injection helper
 def get_ai_service() -> AIService:

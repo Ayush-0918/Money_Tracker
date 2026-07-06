@@ -15,6 +15,8 @@ import com.example.moneytracker.data.repository.BudgetRepositoryImpl
 import com.example.moneytracker.data.repository.CategoryRepositoryImpl
 import com.example.moneytracker.domain.repository.PredictionRepository
 import com.example.moneytracker.data.repository.PredictionRepositoryImpl
+import com.example.moneytracker.domain.repository.WeeklyReportRepository
+import com.example.moneytracker.data.repository.WeeklyReportRepositoryImpl
 import com.example.moneytracker.util.SecurePrefs
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -34,6 +36,7 @@ object ServiceLocator {
     private var budgetRepository: BudgetRepository? = null
     private var categoryRepository: CategoryRepository? = null
     private var predictionRepository: PredictionRepository? = null
+    private var weeklyReportRepository: WeeklyReportRepository? = null
 
     private fun provideDatabase(context: Context): AppDatabase {
         return database ?: synchronized(this) {
@@ -104,7 +107,18 @@ object ServiceLocator {
             instance
         }
     }
-    
+
+    fun provideWeeklyReportRepository(context: Context): WeeklyReportRepository {
+        return weeklyReportRepository ?: synchronized(this) {
+            val instance = WeeklyReportRepositoryImpl(
+                api = provideApiService(context),
+                securePrefs = provideSecurePrefs(context)
+            )
+            weeklyReportRepository = instance
+            instance
+        }
+    }
+
     // For WorkManager
     fun provideSyncWorkerDependencies(context: Context): SyncWorkerDependencies {
         return SyncWorkerDependencies(
