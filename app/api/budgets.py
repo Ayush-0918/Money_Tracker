@@ -6,12 +6,14 @@ Budget endpoints.
 
 import uuid
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from app.api.deps import get_current_user_id, get_db
+from app.config import settings
+from app.utils.limiter import limiter
 from app.models.budget import Budget
 from app.schemas.budget import BudgetCreate, BudgetResponse, BudgetSummaryResponse
 from app.services.budget_service import get_budget_summary_from_cache, recalculate_user_budgets
@@ -27,8 +29,10 @@ router = APIRouter(prefix="/budgets", tags=["Budgets"])
     status_code=status.HTTP_201_CREATED,
     summary="Create a new budget",
 )
+@limiter.limit("10/minute")
 async def create_budget(
     body: BudgetCreate,
+    request: Request,
     current_user_id: uuid.UUID = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
@@ -84,7 +88,9 @@ async def get_budget_summary(
     status_code=status.HTTP_200_OK,
     summary="Force recalculation of budget snapshots",
 )
+@limiter.limit("5/minute")
 async def force_recalculate_budgets(
+    request: Request,
     current_user_id: uuid.UUID = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
@@ -97,9 +103,11 @@ async def force_recalculate_budgets(
     status_code=status.HTTP_200_OK,
     summary="Update budget limit",
 )
+@limiter.limit("10/minute")
 async def update_budget(
     budget_id: uuid.UUID,
     body: BudgetCreate,
+    request: Request,
     current_user_id: uuid.UUID = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
@@ -108,6 +116,11 @@ async def update_budget(
     b = result.scalar_one_or_none()
     if not b:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Budget not found")
+        
+    # No-op check: category and limit are identical
+    if b.category_id == body.category_id and b.monthly_limit == body.monthly_limit:
+        logger.info("budgets: update is no-op | budget_id=%s", budget_id)
+        return b
         
     b.category_id = body.category_id
     b.monthly_limit = body.monthly_limit
@@ -122,8 +135,10 @@ async def update_budget(
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete budget",
 )
+@limiter.limit("10/minute")
 async def delete_budget(
     budget_id: uuid.UUID,
+    request: Request,
     current_user_id: uuid.UUID = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
