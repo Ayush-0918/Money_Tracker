@@ -8,7 +8,7 @@ live SUM() query at request time.
 from decimal import Decimal, ROUND_HALF_UP
 from datetime import datetime, timezone
 from uuid import UUID
-from typing import List
+from typing import List, Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, text
