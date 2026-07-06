@@ -19,11 +19,12 @@ import uuid
 from datetime import datetime
 from typing import Optional, Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy import func, select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user_id, get_db
+from app.config import settings
 from app.utils.limiter import limiter
 from app.models.user import User
 from app.models.transaction import Transaction
@@ -67,9 +68,10 @@ router = APIRouter(prefix="/transactions", tags=["Transactions"])
         429: {"description": "Rate limit exceeded"},
     },
 )
-@limiter.limit("20/minute")
+@limiter.limit(f"{settings.RATE_LIMIT_PER_MINUTE}/minute")
 async def post_transaction(
     request: Request,
+    response: Response,
     body: TransactionCreate,
     current_user_id: uuid.UUID = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
@@ -121,7 +123,10 @@ async def post_transaction(
 
     # ── Run the ingestion pipeline ────────────────────────────────────────────
     try:
-        return await create_transaction(payload=body, db=db)
+        tx_response = await create_transaction(payload=body, db=db)
+        if tx_response.is_duplicate:
+            response.status_code = status.HTTP_200_OK
+        return tx_response
 
     except OTPDetectedError:
         # OTP/sensitive content: return 400, log warning (no text content logged)
@@ -280,9 +285,16 @@ async def update_transaction_category(
         )
 
     # ── Logic ─────────────────────────────────────────────────────────────
+    previous_category_id = tx.category_id
+
+    # Deduplication check: if category is unchanged, treat as no-op and return 204
+    if previous_category_id == body.category_id:
+        logger.info("transactions: category update is no-op | tx_id=%s | category_id=%s", tx_id, body.category_id)
+        return
+
     # Invalidate old budget cache if there is one
-    if tx.category_id:
-        old_budget_stmt = select(Budget).where(Budget.user_id == current_user_id, Budget.category_id == tx.category_id)
+    if previous_category_id:
+        old_budget_stmt = select(Budget).where(Budget.user_id == current_user_id, Budget.category_id == previous_category_id)
         old_budget = (await db.execute(old_budget_stmt)).scalar_one_or_none()
         if old_budget:
             old_budget.cached_updated_at = None
@@ -303,7 +315,7 @@ async def update_transaction_category(
     learning_event = LearningEvent(
         transaction_id=tx.id,
         merchant_id=alias.merchant_id if alias else None,
-        old_category_id=tx.category_id,
+        old_category_id=previous_category_id,
         new_category_id=body.category_id,
         feedback_source="MANUAL"
     )

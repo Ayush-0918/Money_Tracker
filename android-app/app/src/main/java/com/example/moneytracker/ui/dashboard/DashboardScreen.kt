@@ -29,6 +29,8 @@ import com.example.moneytracker.data.remote.dto.SubscriptionDto
 import com.example.moneytracker.data.remote.dto.TransactionItemDto
 import com.example.moneytracker.ui.activity.ActivityScreen
 import com.example.moneytracker.ui.activity.ActivityViewModel
+import com.example.moneytracker.ui.analytics.AnalyticsScreen
+import com.example.moneytracker.ui.analytics.AnalyticsViewModel
 import com.example.moneytracker.ui.budget.BudgetScreen
 import com.example.moneytracker.ui.budget.BudgetViewModel
 import com.example.moneytracker.ui.components.*
@@ -43,7 +45,8 @@ import kotlin.time.Duration.Companion.milliseconds
 fun DashboardScreen(
     viewModel: DashboardViewModel,
     activityViewModel: ActivityViewModel,
-    budgetViewModel: BudgetViewModel? = null
+    budgetViewModel: BudgetViewModel? = null,
+    analyticsViewModel: AnalyticsViewModel? = null
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val selectedTxId by viewModel.selectedTransactionForCategorize.collectAsState()
@@ -56,7 +59,8 @@ fun DashboardScreen(
         onRetry = { viewModel.loadDashboardData() },
         onCategorizeClicked = { txId -> viewModel.onCategorizeClicked(txId) },
         activityViewModel = activityViewModel,
-        budgetViewModel = budgetViewModel
+        budgetViewModel = budgetViewModel,
+        analyticsViewModel = analyticsViewModel
     )
 }
 
@@ -70,7 +74,8 @@ fun DashboardScreenContent(
     onRetry: () -> Unit,
     onCategorizeClicked: (String) -> Unit,
     activityViewModel: ActivityViewModel? = null,
-    budgetViewModel: BudgetViewModel? = null
+    budgetViewModel: BudgetViewModel? = null,
+    analyticsViewModel: AnalyticsViewModel? = null
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -139,8 +144,8 @@ fun DashboardScreenContent(
                                 }
                             }
                             2 -> Box(modifier = Modifier.fillMaxSize()) { 
-                                if (budgetViewModel != null) {
-                                    BudgetScreen(viewModel = budgetViewModel)
+                                if (analyticsViewModel != null) {
+                                    AnalyticsScreen(viewModel = analyticsViewModel)
                                 } else {
                                     Box(modifier = Modifier.padding(16.dp)) { CategorySection(uiState.summary) }
                                 }
@@ -240,7 +245,7 @@ fun DashboardContent(
         item {
             CardEntrance(delay = 200) {
                 AICoachCard(
-                    insight = "You've spent 15% less on Food than last month. Keep it up!"
+                    insight = summary.ai_insights ?: "Welcome! I'm your AI finance coach. Spend money to get insights."
                 )
             }
         }
@@ -253,10 +258,11 @@ fun DashboardContent(
         
         item {
             CardEntrance(delay = 400) {
+                val budget = summary.budgets.firstOrNull()
                 BudgetCard(
-                    spent = spendValue,
-                    total = 40000f,
-                    progress = (spendValue / 40000f).coerceIn(0f, 1f)
+                    spent = budget?.spent?.toFloat() ?: spendValue,
+                    total = budget?.monthly_limit?.toFloat() ?: 40000f,
+                    progress = ((budget?.percentage_used ?: 0.0) / 100.0).coerceIn(0.0, 1.0).toFloat()
                 )
             }
         }
@@ -269,7 +275,7 @@ fun DashboardContent(
 
         item {
             CardEntrance(delay = 600) {
-                CategorySection(report)
+                CategorySection(summary)
             }
         }
 
