@@ -32,6 +32,21 @@ interface ApiService {
     @GET("dashboard/summary")
     suspend fun getDashboardSummary(): Response<DashboardSummaryDto>
 
+    @GET("reports/monthly/{userId}")
+    suspend fun getMonthlyReport(
+        @Path("userId") userId: String
+    ): Response<MonthlyReportDto>
+
+    @GET("reports/weekly/{userId}")
+    suspend fun getWeeklyReport(
+        @Path("userId") userId: String
+    ): Response<com.example.moneytracker.data.remote.dto.WeeklyActivityDto>
+
+    @GET("reports/subscriptions/{userId}")
+    suspend fun getSubscriptionReport(
+        @Path("userId") userId: String
+    ): Response<List<com.example.moneytracker.data.remote.dto.SubscriptionDto>>
+
     @PATCH("transactions/{id}/category")
     suspend fun updateCategory(
         @Path("id") txId: String,

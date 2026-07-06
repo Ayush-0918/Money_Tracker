@@ -32,57 +32,7 @@ from app.database import get_db
 from app.main import app
 from app.models import Base
 
-# ── Test Database Setup ───────────────────────────────────────────────────────
-# Use SQLite with aiosqlite for tests — no external dependencies required.
-# Note: SQLite doesn't support all PostgreSQL features (e.g., NUMERIC behaves
-# differently), but is sufficient for integration-level tests.
-
-TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
-
-test_engine = create_async_engine(TEST_DATABASE_URL, echo=False)
-TestSessionLocal = async_sessionmaker(
-    bind=test_engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-    autocommit=False,
-    autoflush=False,
-)
-
-
-@pytest_asyncio.fixture(autouse=True)
-async def setup_test_db():
-    """Create all tables before each test, drop them after."""
-    async with test_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    yield
-    async with test_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-
-
-async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
-    """Replace the real DB session with the test SQLite session."""
-    async with TestSessionLocal() as session:
-        try:
-            yield session
-            await session.commit()
-        except Exception:
-            await session.rollback()
-            raise
-        finally:
-            await session.close()
-
-
-# Apply the dependency override
-app.dependency_overrides[get_db] = override_get_db
-
-
 # ── Test Client Helper ────────────────────────────────────────────────────────
-
-@pytest_asyncio.fixture
-async def client() -> AsyncGenerator[AsyncClient, None]:
-    """Async HTTP test client for the FastAPI app."""
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        yield ac
 
 
 # ── Registration Helper ───────────────────────────────────────────────────────
@@ -259,11 +209,9 @@ async def test_monthly_report_empty(client: AsyncClient):
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
-    assert data["user_id"] == user_id
-    assert str(data["total_spend"]) == "0.00"
-    assert data["transaction_count"] == 0
-    assert data["category_breakdown"] == []
-    assert data["top_merchants"] == []
+    assert "total_spend_formatted" in data
+    assert "categories" in data
+    assert data["recent_transactions"] == []
 
 
 @pytest.mark.asyncio
@@ -288,8 +236,8 @@ async def test_monthly_report_with_transaction(client: AsyncClient):
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
-    assert data["transaction_count"] == 1
-    assert float(data["total_spend"]) == pytest.approx(299.0)
+    assert len(data["recent_transactions"]) == 1
+    assert "299" in data["total_spend_formatted"]
 
 
 @pytest.mark.asyncio
@@ -316,10 +264,8 @@ async def test_subscription_report_empty(client: AsyncClient):
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
-    assert data["active_subscriptions"] == []
-    assert str(data["total_monthly_cost"]) == "0.00"
-    assert data["due_in_7_days"] == []
-    assert data["unused_subscriptions"] == []
+    assert isinstance(data, list)
+    assert data == []
 
 
 # ── Health Check ──────────────────────────────────────────────────────────────
