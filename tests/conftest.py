@@ -2,6 +2,11 @@
 tests/conftest.py
 ─────────────────────────────────────────────────────────────────────────────
 Pytest configuration and shared fixtures.
+
+SECURITY NOTE:
+    All values set here are TEST-ONLY values used exclusively in the SQLite
+    in-memory test environment. They are never used in production.
+    Production secrets are loaded from .env and are never committed to git.
 """
 
 import os
@@ -12,18 +17,22 @@ from collections.abc import AsyncGenerator
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+# ── Test-only credential constants ───────────────────────────────────────────
+# These values are ONLY used in the SQLite in-memory test environment.
+# They are NOT real secrets and are NOT used in production.
+# Production secrets come exclusively from .env (which is gitignored).
+_TEST_JWT_SECRET = "ci-test-jwt-secret-minimum-32-chars-not-for-prod"
+_TEST_ADMIN_KEY = "ci-test-admin-key-not-for-production-use"  # nosec
+
 # Set required env vars before ANY app import
 os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
-os.environ.setdefault(
-    "JWT_SECRET_KEY",
-    "test-secret-key-minimum-32-characters-long-for-tests",
-)
+os.environ.setdefault("JWT_SECRET_KEY", _TEST_JWT_SECRET)
 os.environ.setdefault("JWT_ALGORITHM", "HS256")
 os.environ.setdefault("JWT_EXPIRE_MINUTES", "60")
 os.environ.setdefault("ALLOWED_ORIGINS", "http://localhost:3000")
 os.environ.setdefault("RATE_LIMIT_PER_MINUTE", "100")
 os.environ.setdefault("ENVIRONMENT", "development")
-os.environ.setdefault("ADMIN_API_KEY", "REDACTED_TEST_ADMIN_KEY")
+os.environ.setdefault("ADMIN_API_KEY", _TEST_ADMIN_KEY)
 
 from app.database import get_db
 from app.main import app
@@ -78,5 +87,5 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
 
 @pytest_asyncio.fixture
 def admin_headers() -> dict:
-    """Authentication headers for admin endpoints."""
-    return {"X-Admin-Key": "REDACTED_TEST_ADMIN_KEY"}
+    """Authentication headers for admin endpoints (test environment only)."""
+    return {"X-Admin-Key": _TEST_ADMIN_KEY}

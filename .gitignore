@@ -54,6 +54,39 @@ coverage.xml
 
 # OS
 .DS_Store
+
+# ── SECURITY — NEVER COMMIT THESE ────────────────────────────────────────────
+# Private keys and certificates
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.der
+
+# Android signing
+*.jks
+*.keystore
+keystore.properties
+
+# Firebase / Google Cloud
+google-services.json
+GoogleService-Info.plist
+service-account*.json
+*-credentials.json
+firebase-adminsdk*.json
+
+# Secrets and credential files
+*secret*
+*credential*
+.secrets
+secrets/
+
+# Terraform state (may contain secrets)
+*.tfstate
+*.tfstate.backup
+.terraform/
 Thumbs.db
 
 # Alembic (keep versions, ignore pycache inside)
