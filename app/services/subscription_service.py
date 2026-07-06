@@ -28,7 +28,7 @@ Currency assumption: INR only. All amounts treated as Indian Rupees.
 from __future__ import annotations
 
 import uuid
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 from sqlalchemy import select
@@ -110,13 +110,10 @@ async def check_and_update_recurring(
     lower_bound = amount * (1 - _AMOUNT_TOLERANCE_PERCENT)
     upper_bound = amount * (1 + _AMOUNT_TOLERANCE_PERCENT)
 
-    amounts_in_range = all(
-        lower_bound <= txn.amount <= upper_bound for txn in prior_transactions
-    )
+    amounts_in_range = all(lower_bound <= txn.amount <= upper_bound for txn in prior_transactions)
     if not amounts_in_range:
         logger.debug(
-            "subscription_service: amount variance too high — not recurring | "
-            "merchant=%r | current_amount=%s",
+            "subscription_service: amount variance too high — not recurring | " "merchant=%r | current_amount=%s",
             merchant,
             amount,
         )
@@ -143,8 +140,7 @@ async def check_and_update_recurring(
     avg_gap = sum(gaps) / len(gaps)
     if not (_MIN_GAP_DAYS <= avg_gap <= _MAX_GAP_DAYS):
         logger.debug(
-            "subscription_service: average gap %d days outside monthly range "
-            "[%d, %d] | merchant=%r",
+            "subscription_service: average gap %d days outside monthly range " "[%d, %d] | merchant=%r",
             avg_gap,
             _MIN_GAP_DAYS,
             _MAX_GAP_DAYS,
@@ -154,8 +150,7 @@ async def check_and_update_recurring(
 
     # ── Recurring Pattern Confirmed — Upsert Subscription ────────────────────
     logger.info(
-        "subscription_service: recurring pattern detected | merchant=%r | "
-        "avg_gap_days=%.1f | amount=%s",
+        "subscription_service: recurring pattern detected | merchant=%r | " "avg_gap_days=%.1f | amount=%s",
         merchant,
         avg_gap,
         amount,
@@ -180,7 +175,7 @@ async def _upsert_subscription(
     merchant: str,
     amount: Decimal,
     billing_cycle: str,
-    next_billing_date: Optional[date],
+    next_billing_date: date | None,
 ) -> None:
     """
     Insert a new subscription or update the existing one for this
@@ -219,8 +214,7 @@ async def _upsert_subscription(
     )
     await db.execute(stmt)
     logger.info(
-        "subscription_service: subscription upserted | user_id=%s | merchant=%r | "
-        "next_billing=%s",
+        "subscription_service: subscription upserted | user_id=%s | merchant=%r | " "next_billing=%s",
         user_id,
         merchant,
         next_billing_date,
