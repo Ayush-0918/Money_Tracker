@@ -40,9 +40,9 @@ jobs:
 
     - name: Run Tests with Pytest
       env:
-        DATABASE_URL: sqlite+aiosqlite:///:memory:
-        JWT_SECRET_KEY: test_jwt_secret_key_must_be_at_least_32_characters_long
-        AI_ENABLED: false
-        slowapi_bypass: true
+        DATABASE_URL: "sqlite+aiosqlite:///:memory:"
+        JWT_SECRET_KEY: "test_jwt_secret_key_must_be_at_least_32_characters_long"
+        AI_ENABLED: "false"
+        slowapi_bypass: "true"
       run: |
         pytest -v
