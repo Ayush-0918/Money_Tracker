@@ -5,12 +5,24 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.example.moneytracker.data.local.dao.TransactionDao
+import com.example.moneytracker.data.local.dao.CacheDao
 import com.example.moneytracker.data.local.entity.TransactionEntity
-// import net.sqlcipher.database.SupportOpenHelperFactory
+import com.example.moneytracker.data.local.entity.CachedTransactionEntity
+import com.example.moneytracker.data.local.entity.CachedBudgetEntity
+import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
-@Database(entities = [TransactionEntity::class], version = 1, exportSchema = false)
+@Database(
+    entities = [
+        TransactionEntity::class, 
+        CachedTransactionEntity::class, 
+        CachedBudgetEntity::class
+    ], 
+    version = 2, 
+    exportSchema = false
+)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun transactionDao(): TransactionDao
+    abstract fun cacheDao(): CacheDao
 
     companion object {
         @Volatile
@@ -30,14 +42,14 @@ abstract class AppDatabase : RoomDatabase() {
                 }
 
                 // Use SQLCipher for encrypted Room database
-                // val factory = SupportOpenHelperFactory(dbPassword.toByteArray())
+                val factory = SupportOpenHelperFactory(dbPassword.toByteArray())
                 
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     "money_tracker_encrypted_db"
                 )
-                // .openHelperFactory(factory)
+                .openHelperFactory(factory)
                 .build()
                 INSTANCE = instance
                 instance

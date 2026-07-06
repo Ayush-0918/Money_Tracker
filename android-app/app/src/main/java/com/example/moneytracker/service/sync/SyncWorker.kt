@@ -32,8 +32,12 @@ class SyncWorker(
                 if (response.isSuccessful) {
                     dao.delete(transaction)
                 } else {
-                    // In a real app, you might want to stop here to avoid multiple retries in one go
-                    return@withContext Result.retry()
+                    if (response.code() == 400 || response.code() == 422 || response.code() == 409) {
+                        android.util.Log.e("SyncWorker", "Non-recoverable error (${response.code()}) for transaction ${transaction.id}. Discarding.")
+                        dao.delete(transaction)
+                    } else {
+                        return@withContext Result.retry()
+                    }
                 }
             } catch (e: Exception) {
                 return@withContext Result.retry()
