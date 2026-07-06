@@ -28,6 +28,10 @@ celery_app.conf.update(
             "task": "generate_weekly_financial_report",
             "schedule": crontab(hour=3, minute=30, day_of_week=0),  # Sunday 03:30 UTC = 09:00 IST
         },
+        "money-story-sunday": {
+            "task": "generate_sunday_money_story",
+            "schedule": crontab(hour=3, minute=30, day_of_week=0),  # Sunday 03:30 UTC = 09:00 IST
+        },
     },
 )
 
@@ -102,3 +106,56 @@ def generate_weekly_financial_report():
     count = asyncio.run(_run())
     print(f"[WeeklyReport] Sunday pre-computation complete. Reports generated: {count}")
     return f"Weekly reports pre-computed for {count} users"
+
+
+@celery_app.task(name="generate_sunday_money_story")
+def generate_sunday_money_story():
+    """
+    Celery Beat task — runs every Sunday at 09:00 IST (03:30 UTC).
+
+    Pre-computes and caches the Sunday Money Story for all active users.
+    """
+    import asyncio
+    import uuid as _uuid
+
+    async def _run():
+        from sqlalchemy.orm import sessionmaker
+        from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+        from sqlalchemy import select
+
+        from app.models.user import User
+        from app.services.money_story_service import generate_money_story
+        from app.config import settings as _cfg
+
+        engine = create_async_engine(_cfg.DATABASE_URL, echo=False)
+        async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+        async with async_session() as session:
+            result = await session.execute(select(User.id))
+            user_ids = result.scalars().all()
+
+        processed = 0
+        for uid in user_ids:
+            try:
+                async with async_session() as session:
+                    story = await generate_money_story(db=session, user_id=uid)
+
+                # Write to Redis cache
+                try:
+                    import redis as sync_redis
+                    r = sync_redis.from_url(_cfg.REDIS_URL, decode_responses=True)
+                    key = f"money_story:{uid}"
+                    r.setex(key, 3600, story.model_dump_json())
+                    processed += 1
+                except Exception as cache_err:
+                    print(f"[MoneyStory] Redis cache write failed for {uid}: {cache_err}")
+            except Exception as e:
+                print(f"[MoneyStory] Failed for user {uid}: {e}")
+
+        await engine.dispose()
+        return processed
+
+    count = asyncio.run(_run())
+    print(f"[MoneyStory] Sunday pre-computation complete. Stories generated: {count}")
+    return f"Sunday Money Stories pre-computed for {count} users"
+

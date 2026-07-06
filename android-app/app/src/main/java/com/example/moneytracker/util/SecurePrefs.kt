@@ -142,4 +142,23 @@ class SecurePrefs(context: Context) {
             null
         }
     }
+
+    // ── AI Money Story cache ──────────────────────────────────────────────────
+
+    fun saveMoneyStory(story: com.example.moneytracker.data.remote.dto.MoneyStoryResponseDto) {
+        val json = com.google.gson.Gson().toJson(story)
+        prefs.edit().putString("cache_money_story", json).apply()
+    }
+
+    fun getMoneyStory(): com.example.moneytracker.data.remote.dto.MoneyStoryResponseDto? {
+        val json = prefs.getString("cache_money_story", null) ?: return null
+        return try {
+            com.google.gson.Gson().fromJson(
+                json,
+                com.example.moneytracker.data.remote.dto.MoneyStoryResponseDto::class.java
+            )
+        } catch (e: Exception) {
+            null
+        }
+    }
 }

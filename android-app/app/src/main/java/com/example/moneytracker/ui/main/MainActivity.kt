@@ -167,7 +167,7 @@ class MainActivity : ComponentActivity() {
                             budgetViewModel = budgetViewModel,
                             analyticsViewModel = analyticsViewModel,
                             onPredictionsClick = { navController.navigate("predictions") },
-                            onWeeklyReportClick = { navController.navigate("weekly_report") }
+                            onMoneyStoryClick = { navController.navigate("money_story") }
                         )
                     }
                     composable("predictions") {
@@ -179,13 +179,18 @@ class MainActivity : ComponentActivity() {
                             onNavigateBack = { navController.popBackStack() }
                         )
                     }
-                    composable("weekly_report") {
-                        val userId = ServiceLocator.provideApiService(applicationContext)
-                            .let { com.example.moneytracker.util.SecurePrefs(applicationContext).getUserId() ?: "" }
-                        val weeklyReportRepository = ServiceLocator.provideWeeklyReportRepository(applicationContext)
-                        val weeklyReportViewModel = WeeklyReportViewModel(weeklyReportRepository, userId)
-                        WeeklyReportScreen(
-                            viewModel = weeklyReportViewModel,
+                    composable("money_story") {
+                        val userId = com.example.moneytracker.util.SecurePrefs(applicationContext).getUserId() ?: ""
+                        val moneyStoryRepository = ServiceLocator.provideMoneyStoryRepository(applicationContext)
+                        val moneyStoryViewModel = androidx.lifecycle.viewmodel.compose.viewModel<MoneyStoryViewModel>(
+                            factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+                                override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                                    return MoneyStoryViewModel(moneyStoryRepository, userId) as T
+                                }
+                            }
+                        )
+                        MoneyStoryScreen(
+                            viewModel = moneyStoryViewModel,
                             onBack = { navController.popBackStack() }
                         )
                     }

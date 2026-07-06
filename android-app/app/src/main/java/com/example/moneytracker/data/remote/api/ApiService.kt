@@ -19,6 +19,7 @@ import com.example.moneytracker.data.remote.dto.BudgetCreateRequest
 import com.example.moneytracker.data.remote.dto.CategoryUpdateDto
 import com.example.moneytracker.data.remote.dto.AIPredictionResponseDto
 import com.example.moneytracker.data.remote.dto.WeeklyReportResponseDto
+import com.example.moneytracker.data.remote.dto.MoneyStoryResponseDto
 
 interface ApiService {
     @POST("auth/register")
@@ -89,4 +90,15 @@ interface ApiService {
     suspend fun getWeeklyFinancialReport(
         @Path("userId") userId: String
     ): Response<WeeklyReportResponseDto>
+
+    // ── Sunday Money Story ────────────────────────────────────────────────────
+    @GET("money-story/{userId}")
+    suspend fun getMoneyStory(
+        @Path("userId") userId: String
+    ): Response<MoneyStoryResponseDto>
+
+    @POST("money-story/{userId}/refresh")
+    suspend fun refreshMoneyStory(
+        @Path("userId") userId: String
+    ): Response<MoneyStoryResponseDto>
 }

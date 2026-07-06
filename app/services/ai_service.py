@@ -606,6 +606,49 @@ class AIService:
                 pass
         return None
 
+    async def get_money_story_ai(
+        self, story_data: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Generates AI narrative fields for the Sunday Money Story:
+        best_decision, worst_decision, prediction_next_week, tips, and next week's challenge.
+
+        Args:
+            story_data: dict containing transaction summaries, budget status, and prior week history.
+
+        Returns:
+            dict with keys: best_decision (str), worst_decision (str), prediction_next_week (str),
+                           tips (list[str]), weekly_challenge (str)
+            or None if all providers fail.
+        """
+        if not self.enabled:
+            return None
+
+        system_msg = (
+            "You are a friendly, witty, and concise personal finance assistant for Indian users. "
+            "Analyze the user's weekly spending data to extract their best financial choice, "
+            "their worst financial mistake, next week's spend forecast, 2-3 customized tips, and "
+            "a weekly savings challenge. Use Indian Rupee (₹) and sound like a CRED/fintech coach."
+        )
+        prompt = (
+            f"Weekly financial data: {json.dumps(story_data)}. "
+            "Return JSON containing exactly: "
+            '{"best_decision": "text", "worst_decision": "text", "prediction_next_week": "text", '
+            '"tips": ["tip1", "tip2"], "weekly_challenge": "text"}'
+        )
+
+        result_json = await self.provider.get_completion(prompt, system_msg)
+        if result_json:
+            try:
+                data = json.loads(result_json)
+                required_keys = ["best_decision", "worst_decision", "prediction_next_week", "tips", "weekly_challenge"]
+                if all(k in data for k in required_keys):
+                    return data
+            except (json.JSONDecodeError, TypeError):
+                pass
+        return None
+
+
 
 # Dependency Injection helper
 def get_ai_service() -> AIService:

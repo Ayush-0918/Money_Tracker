@@ -48,7 +48,7 @@ fun DashboardScreen(
     budgetViewModel: BudgetViewModel? = null,
     analyticsViewModel: AnalyticsViewModel? = null,
     onPredictionsClick: () -> Unit,
-    onWeeklyReportClick: () -> Unit
+    onMoneyStoryClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val selectedTxId by viewModel.selectedTransactionForCategorize.collectAsState()
@@ -64,7 +64,7 @@ fun DashboardScreen(
         budgetViewModel = budgetViewModel,
         analyticsViewModel = analyticsViewModel,
         onPredictionsClick = onPredictionsClick,
-        onWeeklyReportClick = onWeeklyReportClick
+        onMoneyStoryClick = onMoneyStoryClick
     )
 }
 
@@ -81,7 +81,7 @@ fun DashboardScreenContent(
     budgetViewModel: BudgetViewModel? = null,
     analyticsViewModel: AnalyticsViewModel? = null,
     onPredictionsClick: () -> Unit,
-    onWeeklyReportClick: () -> Unit
+    onMoneyStoryClick: () -> Unit
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -142,7 +142,7 @@ fun DashboardScreenContent(
                                 onAddClick = { scope.launch { snackbarHostState.showSnackbar("Add Balance flow coming soon") } },
                                 onSeeAllClick = { scope.launch { snackbarHostState.showSnackbar("Navigating to all transactions...") } },
                                 onPredictionsClick = onPredictionsClick,
-                                onWeeklyReportClick = onWeeklyReportClick
+                                onMoneyStoryClick = onMoneyStoryClick
                             )
                             1 -> Box(modifier = Modifier.fillMaxSize()) { 
                                 if (activityViewModel != null) {
@@ -268,7 +268,7 @@ fun DashboardContent(
 
         item {
             CardEntrance(delay = 280) {
-                WeeklyReportCard(onClick = onWeeklyReportClick)
+                MoneyStoryCard(onClick = onMoneyStoryClick)
             }
         }
 
@@ -900,7 +900,7 @@ fun AIPredictionsCard(onClick: () -> Unit) {
 }
 
 @Composable
-fun WeeklyReportCard(onClick: () -> Unit) {
+fun MoneyStoryCard(onClick: () -> Unit) {
     Card(
         onClick = onClick,
         modifier = Modifier
@@ -924,34 +924,44 @@ fun WeeklyReportCard(onClick: () -> Unit) {
                         .background(Color(0xFF4CAF7D).copy(alpha = 0.15f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.BarChart,
-                        contentDescription = null,
-                        tint = Color(0xFF4CAF7D),
-                        modifier = Modifier.size(24.dp)
-                    )
+                    Text("✨", fontSize = 22.sp)
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 Column {
                     Text(
-                        text = "AI Weekly Report",
+                        text = "Your Money Story is Ready",
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = Color.White
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "Your 7-day financial summary & insights",
+                        text = "You saved ₹2,430 more than last week.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = FintechSecondary
                     )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Tap to Explore →",
+                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                        color = Color(0xFF4CAF7D)
+                    )
                 }
             }
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = FintechSecondary,
-                modifier = Modifier.size(24.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .size(50.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFF4CAF7D).copy(alpha = 0.1f))
+                    .border(1.dp, Color(0xFF4CAF7D).copy(alpha = 0.3f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "91",
+                    color = Color(0xFF4CAF7D),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
+            }
         }
     }
 }
