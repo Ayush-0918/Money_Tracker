@@ -25,6 +25,8 @@ import com.example.moneytracker.ui.reports.WeeklyReportViewModel
 import com.example.moneytracker.ui.reports.WeeklyReportScreen
 import com.example.moneytracker.ui.family.FamilyViewModel
 import com.example.moneytracker.ui.family.FamilyScreen
+import com.example.moneytracker.ui.dreams.DreamViewModel
+import com.example.moneytracker.ui.dreams.DreamScreen
 import com.example.moneytracker.ui.budget.BudgetViewModel
 import com.example.moneytracker.ui.budget.BudgetViewModelFactory
 import com.example.moneytracker.ui.onboarding.LanguageSelectionScreen
@@ -207,6 +209,20 @@ class MainActivity : ComponentActivity() {
                         )
                         FamilyScreen(
                             viewModel = familyViewModel,
+                            onNavigateBack = { navController.popBackStack() }
+                        )
+                    }
+                    composable("dreams") {
+                        val dreamRepository = ServiceLocator.provideDreamRepository(applicationContext)
+                        val dreamViewModel = androidx.lifecycle.viewmodel.compose.viewModel<DreamViewModel>(
+                            factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+                                override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                                    return DreamViewModel(dreamRepository) as T
+                                }
+                            }
+                        )
+                        DreamScreen(
+                            viewModel = dreamViewModel,
                             onNavigateBack = { navController.popBackStack() }
                         )
                     }

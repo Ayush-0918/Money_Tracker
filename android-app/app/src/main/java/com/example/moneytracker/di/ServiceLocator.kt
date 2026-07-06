@@ -21,6 +21,8 @@ import com.example.moneytracker.domain.repository.MoneyStoryRepository
 import com.example.moneytracker.data.repository.MoneyStoryRepositoryImpl
 import com.example.moneytracker.domain.repository.FamilyRepository
 import com.example.moneytracker.data.repository.FamilyRepositoryImpl
+import com.example.moneytracker.domain.repository.DreamRepository
+import com.example.moneytracker.data.repository.DreamRepositoryImpl
 import com.example.moneytracker.util.SecurePrefs
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -43,6 +45,7 @@ object ServiceLocator {
     private var weeklyReportRepository: WeeklyReportRepository? = null
     private var moneyStoryRepository: MoneyStoryRepository? = null
     private var familyRepository: FamilyRepository? = null
+    private var dreamRepository: DreamRepository? = null
 
     private fun provideDatabase(context: Context): AppDatabase {
         return database ?: synchronized(this) {
@@ -142,6 +145,16 @@ object ServiceLocator {
                 api = provideApiService(context)
             )
             familyRepository = instance
+            instance
+        }
+    }
+
+    fun provideDreamRepository(context: Context): DreamRepository {
+        return dreamRepository ?: synchronized(this) {
+            val instance = DreamRepositoryImpl(
+                api = provideApiService(context)
+            )
+            dreamRepository = instance
             instance
         }
     }

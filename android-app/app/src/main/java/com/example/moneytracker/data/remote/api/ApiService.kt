@@ -25,6 +25,9 @@ import com.example.moneytracker.data.remote.dto.FamilyWalletResponseDto
 import com.example.moneytracker.data.remote.dto.SharedExpenseCreateDto
 import com.example.moneytracker.data.remote.dto.SharedExpenseDto
 import com.example.moneytracker.data.remote.dto.FamilySummaryResponseDto
+import com.example.moneytracker.data.remote.dto.DreamCreateDto
+import com.example.moneytracker.data.remote.dto.DreamResponseDto
+import com.example.moneytracker.data.remote.dto.DreamUpdateProgressDto
 
 interface ApiService {
     @POST("auth/register")
@@ -136,4 +139,19 @@ interface ApiService {
     suspend fun getFamilySummary(
         @Path("walletId") walletId: String
     ): Response<FamilySummaryResponseDto>
+
+    // ── AI Dream Planner ──────────────────────────────────────────────────────
+    @POST("dreams/create")
+    suspend fun createDream(
+        @Body request: DreamCreateDto
+    ): Response<DreamResponseDto>
+
+    @GET("dreams")
+    suspend fun getDreams(): Response<List<DreamResponseDto>>
+
+    @POST("dreams/{dreamId}/progress")
+    suspend fun addDreamProgress(
+        @Path("dreamId") dreamId: String,
+        @Body request: DreamUpdateProgressDto
+    ): Response<DreamResponseDto>
 }
