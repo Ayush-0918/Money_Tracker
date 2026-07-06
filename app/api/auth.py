@@ -11,8 +11,6 @@ This endpoint intentionally does NOT require a pre-existing token so that
 new Android app installations can register on first launch.
 """
 
-from __future__ import annotations
-
 import uuid
 
 from fastapi import APIRouter, Depends, Request, status
@@ -21,6 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 
 from app.api.deps import get_db
+from app.config import settings
 from app.utils.limiter import limiter
 from app.models.user import User
 from app.schemas.auth import RegisterRequest, TokenResponse
@@ -45,7 +44,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
         "in all subsequent API calls."
     ),
 )
-@limiter.limit("5/minute")
+@limiter.limit(f"{settings.RATE_LIMIT_PER_MINUTE}/minute")
 async def register(
     request: Request,
     body: RegisterRequest,

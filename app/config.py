@@ -13,7 +13,7 @@ Usage:
 """
 
 from functools import lru_cache
-from typing import Literal
+from typing import Literal, Optional
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -84,9 +84,22 @@ class Settings(BaseSettings):
 
     # ── GitHub Models ─────────────────────────────────────────────────────────
     GITHUB_TOKEN: Optional[str] = Field(default=None)
-    GITHUB_MODEL_NAME: str = Field(default="gpt-4o")
+    GITHUB_MODEL: str = Field(default="openai/gpt-5")
+    GITHUB_MODELS_ENDPOINT: str = Field(default="https://models.github.ai/inference")
 
-    AI_ENABLED: bool = Field(default=False)
+    # ── Groq AI Provider ──────────────────────────────────────────────────────
+    GROQ_API_KEY: Optional[str] = Field(default=None)
+    GROQ_MODEL: str = Field(default="llama-3.3-70b-versatile")
+    GROQ_API_URL: str = Field(default="https://api.groq.com/openai/v1")
+
+    AI_ENABLED: bool = Field(default=True)
+    AI_TIMEOUT_GROQ: float = Field(default=10.0, gt=0.0)
+    AI_TIMEOUT_GITHUB: float = Field(default=10.0, gt=0.0)
+
+    # ── DevOps & Monitoring ──────────────────────────────────────────────────
+    SENTRY_DSN: Optional[str] = Field(default=None)
+    REDIS_URL: str = Field(default="redis://localhost:6379/0")
+    CELERY_BROKER_URL: str = Field(default="redis://localhost:6379/0")
 
     @field_validator("JWT_SECRET_KEY")
     @classmethod

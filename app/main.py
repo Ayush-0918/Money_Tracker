@@ -50,6 +50,19 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """
     # ── Startup ───────────────────────────────────────────────────────────────
     configure_logging()
+    
+    if settings.SENTRY_DSN:
+        import sentry_sdk
+        from sentry_sdk.integrations.fastapi import FastAPIIntegration
+        sentry_sdk.init(
+            dsn=settings.SENTRY_DSN,
+            integrations=[FastAPIIntegration()],
+            traces_sample_rate=1.0,
+            profiles_sample_rate=1.0,
+            environment=settings.ENVIRONMENT,
+        )
+        logger.info("Sentry monitoring initialized successfully")
+
     logger.info("Money Tracker API starting up | environment=%s", settings.ENVIRONMENT)
 
     if settings.ENVIRONMENT == "development":
@@ -58,6 +71,44 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
         logger.info("Database tables verified/created (development mode)")
+
+    # Seed system categories if they don't exist
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy.ext.asyncio import AsyncSession
+    from app.models.category import Category
+    from sqlalchemy import select
+
+    async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    async with async_session() as session:
+        async with session.begin():
+            categories_to_seed = [
+                ("food", "food-dining", "Food & Dining", "restaurant", "#4CAF7D", 10),
+                ("shopping", "shopping", "Shopping", "shopping_bag", "#90CAF9", 20),
+                ("bills", "bills-utilities", "Bills & Utilities", "receipt", "#F5A623", 30),
+                ("transport", "transport", "Transport", "directions_car", "#B36B00", 40),
+                ("entertainment", "entertainment", "Entertainment", "movie", "#1E3A5F", 50),
+                ("investment", "investment", "Investment", "trending_up", "#4CAF50", 60),
+                ("health", "health", "Health & Wellness", "favorite", "#E91E63", 70),
+                ("income", "income", "Income", "attach_money", "#9C27B0", 80),
+                ("loans/emi", "loans-emi", "Loans & EMI", "account_balance", "#795548", 90),
+                ("credit card payment", "credit-card-payment", "Credit Card Payment", "credit_card", "#607D8B", 100),
+                ("others", "others", "Others", "more_horiz", "#9E9E9E", 110)
+            ]
+            for name, slug, display_name, icon, color, sort_order in categories_to_seed:
+                stmt = select(Category).where(Category.name == name)
+                res = await session.execute(stmt)
+                if not res.scalar_one_or_none():
+                    new_cat = Category(
+                        name=name,
+                        slug=slug,
+                        display_name=display_name,
+                        icon=icon,
+                        color=color,
+                        sort_order=sort_order,
+                        system=True
+                    )
+                    session.add(new_cat)
+        logger.info("System categories seeded/verified")
 
     yield  # Application runs here
 
@@ -153,6 +204,35 @@ def create_app() -> FastAPI:
                 "message": "An unexpected error occurred. Please try again later.",
             },
         )
+
+    # ── Request Validation Error Handler ──────────────────────────────────────
+    from fastapi.exceptions import RequestValidationError
+    from fastapi.encoders import jsonable_encoder
+    @app.exception_handler(RequestValidationError)
+    async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+        logger.warning("Validation failed: %s", exc.errors())
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            content=jsonable_encoder({
+                "error": "VALIDATION_ERROR",
+                "message": "Invalid request payload or query parameters.",
+                "details": exc.errors()
+            })
+        )
+
+    # ── Request ID Middleware ────────────────────────────────────────────────
+    import uuid
+    from app.utils.logging_config import request_id_ctx_var
+    @app.middleware("http")
+    async def add_request_id_middleware(request: Request, call_next):
+        request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
+        token = request_id_ctx_var.set(request_id)
+        try:
+            response = await call_next(request)
+            response.headers["X-Request-ID"] = request_id
+            return response
+        finally:
+            request_id_ctx_var.reset(token)
 
     return app
 

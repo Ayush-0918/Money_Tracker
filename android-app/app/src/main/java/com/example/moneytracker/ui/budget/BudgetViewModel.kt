@@ -11,6 +11,7 @@ import com.example.moneytracker.domain.repository.CategoryRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -30,21 +31,28 @@ class BudgetViewModel(
     val uiState: StateFlow<BudgetUiState> = _uiState.asStateFlow()
 
     init {
-        loadData()
+        // SSOT: Observe local cache
+        viewModelScope.launch {
+            budgetRepository.getCachedBudgets().collectLatest { cached ->
+                if (cached.isNotEmpty()) {
+                    _uiState.update { it.copy(budgets = cached, isLoading = false) }
+                }
+            }
+        }
+        loadData() // Initial sync
     }
 
     fun loadData() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
             
-            val budgetsResult = budgetRepository.getBudgetSummary()
             val categoriesResult = categoryRepository.getCategories()
+            val budgetsResult = budgetRepository.refreshBudgets()
 
-            if (budgetsResult.isSuccess && categoriesResult.isSuccess) {
+            if (categoriesResult.isSuccess && budgetsResult.isSuccess) {
                 _uiState.update { 
                     it.copy(
                         isLoading = false,
-                        budgets = budgetsResult.getOrNull() ?: emptyList(),
                         categories = categoriesResult.getOrNull() ?: emptyList()
                     ) 
                 }
@@ -52,7 +60,7 @@ class BudgetViewModel(
                 _uiState.update { 
                     it.copy(
                         isLoading = false,
-                        error = "Failed to load budget data."
+                        error = "Failed to load budget data from server."
                     )
                 }
             }
